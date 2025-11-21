@@ -3,10 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/sync-contracts.js",
     "dev": "next dev",
+    "prebuild": "node scripts/sync-contracts.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync-contracts": "node scripts/sync-contracts.js",
+    "sync-contracts:force": "node scripts/sync-contracts.js --force",
+    "sync-contracts:verbose": "node scripts/sync-contracts.js --verbose"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.10",

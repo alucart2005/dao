@@ -7,6 +7,21 @@ import { formatEther, parseEther } from "viem";
 import { CONTRACTS, DAO_VOTING_ABI } from "@/lib/config/contracts";
 import { useAccount } from "wagmi";
 
+// Helper para detectar si el error es porque el contrato no existe
+function isContractNotDeployedError(error: unknown): boolean {
+  if (!error) return false;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return (
+    errorMessage.includes("returned no data") ||
+    errorMessage.includes("0x") ||
+    errorMessage.includes("contract does not have the function") ||
+    errorMessage.includes("address is not a contract")
+  );
+}
+
+// Variable para evitar logs repetidos
+let hasLoggedContractError = false;
+
 export function useUserBalance() {
   const { address } = useAccount();
   const {
@@ -21,13 +36,37 @@ export function useUserBalance() {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && CONTRACTS.DAO_VOTING !== "0x0",
-      refetchInterval: 10000, // Auto-refetch every 10 seconds
+      refetchInterval: (query) => {
+        // Si hay error de contrato no desplegado, no refetch automáticamente
+        if (
+          query.state.error &&
+          isContractNotDeployedError(query.state.error)
+        ) {
+          return false;
+        }
+        return 10000; // Auto-refetch every 10 seconds
+      },
+      retry: (failureCount, error) => {
+        // No retry si el contrato no está desplegado
+        if (isContractNotDeployedError(error)) {
+          return false;
+        }
+        return failureCount < 3;
+      },
     },
   });
 
-  // Log errors for debugging
-  if (error) {
-    console.error("Error reading user balance:", error);
+  // Log errors for debugging (solo una vez)
+  if (error && !hasLoggedContractError) {
+    if (isContractNotDeployedError(error)) {
+      console.warn(
+        "⚠️ Contrato no desplegado. Por favor, despliega los contratos primero:",
+        "\n  cd sc && forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://localhost:8545 --broadcast"
+      );
+      hasLoggedContractError = true;
+    } else {
+      console.error("Error reading user balance:", error);
+    }
   }
 
   return {
@@ -52,14 +91,28 @@ export function useTotalBalance() {
     functionName: "totalBalance",
     query: {
       enabled: CONTRACTS.DAO_VOTING !== "0x0",
-      refetchInterval: 10000, // Auto-refetch every 10 seconds
+      refetchInterval: (query) => {
+        // Si hay error de contrato no desplegado, no refetch automáticamente
+        if (
+          query.state.error &&
+          isContractNotDeployedError(query.state.error)
+        ) {
+          return false;
+        }
+        return 10000; // Auto-refetch every 10 seconds
+      },
+      retry: (failureCount, error) => {
+        // No retry si el contrato no está desplegado
+        if (isContractNotDeployedError(error)) {
+          return false;
+        }
+        return failureCount < 3;
+      },
     },
   });
 
-  // Log errors for debugging
-  if (error) {
-    console.error("Error reading total balance:", error);
-  }
+  // Log errors for debugging (solo una vez, ya se logueó en useUserBalance)
+  // No repetir el log si ya se logueó el error de contrato no desplegado
 
   return {
     totalBalance:
