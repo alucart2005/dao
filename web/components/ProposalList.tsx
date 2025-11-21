@@ -7,7 +7,11 @@ import { ProposalCard } from "./ProposalCard";
 import { createPublicClient, http } from "viem";
 import { localChain } from "@/lib/config/chain";
 
-export function ProposalList() {
+interface ProposalListProps {
+  refreshTrigger?: number;
+}
+
+export function ProposalList({ refreshTrigger = 0 }: ProposalListProps) {
   const [proposalIds, setProposalIds] = useState<bigint[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +55,7 @@ export function ProposalList() {
     };
 
     findProposals();
-  }, []);
+  }, [refreshTrigger]);
 
   return (
     <div className="space-y-4">

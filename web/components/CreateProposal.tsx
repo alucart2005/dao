@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import {
   useCreateProposal,
@@ -9,11 +9,16 @@ import {
 } from "@/hooks/useDAO";
 import { isAddress } from "viem";
 
-export function CreateProposal() {
+interface CreateProposalProps {
+  onProposalCreated?: () => void;
+}
+
+export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
   const { address, isConnected } = useAccount();
   const { balanceWei, refetch: refetchBalance } = useUserBalance();
   const { totalBalanceWei, refetch: refetchTotal } = useTotalBalance();
-  const { createProposal, isPending, isSuccess, error } = useCreateProposal();
+  const { createProposal, isPending, isSuccess, error, hash } =
+    useCreateProposal();
 
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -48,10 +53,20 @@ export function CreateProposal() {
     setDeadline("");
   };
 
-  if (isSuccess) {
-    refetchBalance();
-    refetchTotal();
-  }
+  // Refetch balances and notify parent when proposal is created
+  useEffect(() => {
+    if (isSuccess && hash) {
+      // Wait a bit for the transaction to be mined
+      const timer = setTimeout(() => {
+        refetchBalance();
+        refetchTotal();
+        if (onProposalCreated) {
+          onProposalCreated();
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, hash, refetchBalance, refetchTotal, onProposalCreated]);
 
   if (!isConnected) {
     return (
