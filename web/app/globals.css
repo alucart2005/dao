@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9f8;
+  --foreground: #1f2421;
 }
 
 @theme inline {
@@ -10,17 +10,65 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Carbon Black */
+  --color-carbon-black-100: #060707;
+  --color-carbon-black-200: #0c0e0d;
+  --color-carbon-black-300: #121514;
+  --color-carbon-black-400: #191c1a;
+  --color-carbon-black: #1f2421;
+  --color-carbon-black-600: #48534c;
+  --color-carbon-black-700: #718278;
+  --color-carbon-black-800: #a0aca5;
+  --color-carbon-black-900: #d0d6d2;
+
+  /* Stormy Teal */
+  --color-stormy-teal-100: #071515;
+  --color-stormy-teal-200: #0d292a;
+  --color-stormy-teal-300: #143e3f;
+  --color-stormy-teal-400: #1a5354;
+  --color-stormy-teal: #216869;
+  --color-stormy-teal-600: #339fa1;
+  --color-stormy-teal-700: #55c7c9;
+  --color-stormy-teal-800: #8edadb;
+  --color-stormy-teal-900: #c6eced;
+
+  /* Seaweed */
+  --color-seaweed-100: #0f2018;
+  --color-seaweed-200: #1e4030;
+  --color-seaweed-300: #2c6048;
+  --color-seaweed-400: #3b8160;
+  --color-seaweed: #49a078;
+  --color-seaweed-600: #68ba94;
+  --color-seaweed-700: #8ecbae;
+  --color-seaweed-800: #b4dcc9;
+  --color-seaweed-900: #d9eee4;
+
+  /* Muted Teal */
+  --color-muted-teal-100: #1a2c1c;
+  --color-muted-teal-200: #345938;
+  --color-muted-teal-300: #4e8555;
+  --color-muted-teal-400: #6faa76;
+  --color-muted-teal: #9cc5a1;
+  --color-muted-teal-600: #afd0b3;
+  --color-muted-teal-700: #c3dcc6;
+  --color-muted-teal-800: #d7e8d9;
+  --color-muted-teal-900: #ebf3ec;
+
+  /* Alabaster Grey */
+  --color-alabaster-grey-100: #29302c;
+  --color-alabaster-grey-200: #526057;
+  --color-alabaster-grey-300: #7b8f83;
+  --color-alabaster-grey-400: #abb8b0;
+  --color-alabaster-grey: #dce1de;
+  --color-alabaster-grey-600: #e2e7e4;
+  --color-alabaster-grey-700: #eaedeb;
+  --color-alabaster-grey-800: #f1f3f2;
+  --color-alabaster-grey-900: #f8f9f8;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

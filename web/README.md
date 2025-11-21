@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DAO Voting System - Frontend
 
-## Getting Started
+Aplicación web Next.js 15 para interactuar con el sistema de votación DAO.
 
-First, run the development server:
+## Características
+
+- ✅ Conexión con MetaMask
+- ✅ Panel de financiación del DAO
+- ✅ Creación de propuestas (requiere ≥10% del balance total)
+- ✅ Listado de propuestas con estado en tiempo real
+- ✅ Sistema de votación gasless (sin pagar gas)
+- ✅ Daemon de ejecución automática
+
+## Configuración
+
+1. Instalar dependencias:
+
+```bash
+npm install
+```
+
+2. Crear archivo `.env.local`:
+
+```env
+NEXT_PUBLIC_DAO_ADDRESS=0x...
+NEXT_PUBLIC_FORWARDER_ADDRESS=0x...
+NEXT_PUBLIC_CHAIN_ID=31337
+NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+RELAYER_PRIVATE_KEY=0x...
+RELAYER_ADDRESS=0x...
+```
+
+3. Ejecutar el servidor de desarrollo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estructura del Proyecto
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `app/` - Rutas y páginas de Next.js
+  - `api/` - API routes (relay, nonce, daemon)
+- `components/` - Componentes React
+  - `ConnectWallet.tsx` - Conexión de wallet
+  - `FundingPanel.tsx` - Panel de financiación
+  - `CreateProposal.tsx` - Creación de propuestas
+  - `ProposalList.tsx` - Listado de propuestas
+  - `ProposalCard.tsx` - Tarjeta individual de propuesta
+  - `VoteButtons.tsx` - Botones de votación
+- `hooks/` - Hooks personalizados
+  - `useDAO.ts` - Interacciones con el contrato DAO
+  - `useGaslessVote.ts` - Votación gasless
+- `lib/` - Utilidades y configuración
+  - `config/` - Configuración de contratos y chain
+  - `providers.tsx` - Providers de Wagmi y React Query
+  - `utils/` - Utilidades
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API Routes
 
-## Learn More
+### `/api/nonce`
 
-To learn more about Next.js, take a look at the following resources:
+Obtiene el nonce actual de un usuario para meta-transacciones.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `/api/eip712-domain`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Obtiene el dominio EIP-712 del MinimalForwarder.
 
-## Deploy on Vercel
+### `/api/relay`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Relaya meta-transacciones firmadas. El relayer paga el gas.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `/api/daemon`
+
+Verifica y ejecuta propuestas aprobadas automáticamente.
+
+## Daemon de Ejecución
+
+El daemon puede ejecutarse de dos formas:
+
+1. **Manual**: Usando el botón en la UI
+2. **Automático**: Configurar un cron job o servicio que llame a `/api/daemon` periódicamente
+
+Ejemplo con cron (cada 5 minutos):
+
+```bash
+*/5 * * * * curl http://localhost:3000/api/daemon
+```
+
+## Tecnologías
+
+- Next.js 16
+- React 19
+- Wagmi v2
+- Viem
+- TypeScript
+- Tailwind CSS
