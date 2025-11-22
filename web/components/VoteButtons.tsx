@@ -51,7 +51,7 @@ export function VoteButtons({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <button
           onClick={() => handleVote(VoteType.FOR)}
           disabled={isPending}
@@ -135,6 +135,19 @@ export function VoteButtons({
         >
           ABSTENCIÓN
         </button>
+        {userVote !== undefined && (
+          <div
+            className="text-sm ml-2"
+            style={{ color: "var(--color-carbon-black-600)" }}
+          >
+            Tu voto actual:{" "}
+            {userVote === VoteType.FOR
+              ? "A FAVOR"
+              : userVote === VoteType.AGAINST
+              ? "EN CONTRA"
+              : "ABSTENCIÓN"}
+          </div>
+        )}
       </div>
 
       {isPending && (
@@ -152,20 +165,6 @@ export function VoteButtons({
       {txHash && (
         <div className="text-sm" style={{ color: "var(--color-seaweed)" }}>
           Voto enviado! TX: {txHash.slice(0, 10)}...
-        </div>
-      )}
-
-      {userVote !== undefined && (
-        <div
-          className="text-sm"
-          style={{ color: "var(--color-carbon-black-600)" }}
-        >
-          Tu voto actual:{" "}
-          {userVote === VoteType.FOR
-            ? "A FAVOR"
-            : userVote === VoteType.AGAINST
-            ? "EN CONTRA"
-            : "ABSTENCIÓN"}
         </div>
       )}
     </div>

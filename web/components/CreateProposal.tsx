@@ -7,7 +7,7 @@ import {
   useUserBalance,
   useTotalBalance,
 } from "@/hooks/useDAO";
-import { isAddress } from "viem";
+import { isAddress, formatEther } from "viem";
 
 interface CreateProposalProps {
   onProposalCreated?: () => void;
@@ -124,8 +124,8 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
             style={{ color: "var(--color-muted-teal-200)" }}
           >
             Necesitas tener al menos 10% del balance total del DAO para crear
-            propuestas. Tu balance: {balanceWei.toString()} wei, Mínimo
-            requerido: {minThreshold.toString()} wei
+            propuestas. Tu balance: {formatEther(balanceWei)} ETH, Mínimo
+            requerido: {formatEther(minThreshold)} ETH
           </p>
         </div>
       )}
@@ -177,50 +177,52 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
           />
         </div>
 
-        <div>
-          <label
-            className="block text-sm font-medium mb-2"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Cantidad de ETH
-          </label>
-          <input
-            type="number"
-            step="0.001"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.0"
-            className="w-full px-4 py-2 rounded disabled:opacity-50"
-            style={{
-              borderColor: "var(--color-carbon-black-300)",
-              borderWidth: "1px",
-              backgroundColor: "white",
-              color: "var(--color-carbon-black)",
-            }}
-            disabled={isPending || !canCreateProposal}
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              Cantidad de ETH
+            </label>
+            <input
+              type="number"
+              step="0.001"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.0"
+              className="w-full px-4 py-2 rounded disabled:opacity-50"
+              style={{
+                borderColor: "var(--color-carbon-black-300)",
+                borderWidth: "1px",
+                backgroundColor: "white",
+                color: "var(--color-carbon-black)",
+              }}
+              disabled={isPending || !canCreateProposal}
+            />
+          </div>
 
-        <div>
-          <label
-            className="block text-sm font-medium mb-2"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Fecha límite de votación
-          </label>
-          <input
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="w-full px-4 py-2 rounded disabled:opacity-50"
-            style={{
-              borderColor: "var(--color-carbon-black-300)",
-              borderWidth: "1px",
-              backgroundColor: "white",
-              color: "var(--color-carbon-black)",
-            }}
-            disabled={isPending || !canCreateProposal}
-          />
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              Fecha límite de votación
+            </label>
+            <input
+              type="datetime-local"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="w-full px-4 py-2 rounded disabled:opacity-50"
+              style={{
+                borderColor: "var(--color-carbon-black-300)",
+                borderWidth: "1px",
+                backgroundColor: "white",
+                color: "var(--color-carbon-black)",
+              }}
+              disabled={isPending || !canCreateProposal}
+            />
+          </div>
         </div>
 
         <button

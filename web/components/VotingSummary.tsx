@@ -11,12 +11,18 @@ interface VotingSummaryProps {
 }
 
 interface ProposalData {
+  id: bigint;
+  name?: string;
   votesFor: bigint;
   votesAgainst: bigint;
   votesAbstain: bigint;
   executed: boolean;
   deadline: bigint;
   status: string;
+  totalVotes: bigint;
+  forPercentage: number;
+  againstPercentage: number;
+  abstainPercentage: number;
 }
 
 function ProposalDataLoader({
@@ -44,13 +50,34 @@ function ProposalDataLoader({
     }
 
     const status = getProposalStatus(proposal);
+    const totalVotes =
+      proposal.votesFor + proposal.votesAgainst + proposal.votesAbstain;
+    const forPercentage =
+      totalVotes > 0n
+        ? Number((proposal.votesFor * 10000n) / totalVotes) / 100
+        : 0;
+    const againstPercentage =
+      totalVotes > 0n
+        ? Number((proposal.votesAgainst * 10000n) / totalVotes) / 100
+        : 0;
+    const abstainPercentage =
+      totalVotes > 0n
+        ? Number((proposal.votesAbstain * 10000n) / totalVotes) / 100
+        : 0;
+
     onLoad(proposalId, {
+      id: proposal.id,
+      name: (proposal as any).name,
       votesFor: proposal.votesFor,
       votesAgainst: proposal.votesAgainst,
       votesAbstain: proposal.votesAbstain,
       executed: proposal.executed,
       deadline: proposal.deadline,
       status,
+      totalVotes,
+      forPercentage,
+      againstPercentage,
+      abstainPercentage,
     });
   }, [proposal, isLoading, error, proposalId, onLoad]);
 
@@ -64,6 +91,7 @@ export function VotingSummary({
   const [proposalsData, setProposalsData] = useState<Map<bigint, ProposalData>>(
     new Map()
   );
+  const [showGeneralSummary, setShowGeneralSummary] = useState(false);
 
   const handleProposalLoad = useCallback(
     (proposalId: bigint, data: ProposalData | null) => {
@@ -172,242 +200,422 @@ export function VotingSummary({
 
       {/* Summary Display */}
       <div
-        className="p-6 rounded-lg shadow"
+        className="p-4 rounded-lg shadow"
         style={{ backgroundColor: "var(--color-alabaster-grey)" }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3
-            className="text-xl font-bold"
-            style={{ color: "var(--color-carbon-black)" }}
-          >
-            📊 Resumen de Votaciones
-          </h3>
-          {isLoading && (
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h3
+              className="text-lg font-bold"
+              style={{ color: "var(--color-carbon-black)" }}
+            >
+              📊 Resumen de Votaciones
+            </h3>
             <span
-              className="text-xs"
-              style={{ color: "var(--color-carbon-black-500)" }}
+              className="text-xs px-2 py-0.5 rounded"
+              style={{
+                backgroundColor: "var(--color-carbon-black-900)",
+                color: "var(--color-carbon-black-500)",
+              }}
             >
-              Actualizando...
+              {proposalIds.length}{" "}
+              {proposalIds.length === 1 ? "propuesta" : "propuestas"}
             </span>
-          )}
-        </div>
-
-        <div
-          className="mb-4 pb-4 border-b"
-          style={{ borderColor: "var(--color-carbon-black-300)" }}
-        >
-          <p
-            className="text-sm font-medium"
-            style={{ color: "var(--color-carbon-black-600)" }}
-          >
-            {proposalIds.length}{" "}
-            {proposalIds.length === 1
-              ? "propuesta disponible"
-              : "propuestas disponibles"}
-          </p>
-        </div>
-
-        {/* Vote Totals */}
-        <div className="mb-6">
-          <h4
-            className="text-sm font-semibold mb-3"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Total de Votos
-          </h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div
-              className="p-4 rounded"
-              style={{ backgroundColor: "var(--color-seaweed-900)" }}
-            >
-              <div
-                className="text-xs mb-1"
-                style={{ color: "var(--color-seaweed-200)" }}
-              >
-                A FAVOR
-              </div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: "var(--color-seaweed-200)" }}
-              >
-                {formatEther(stats.totalVotesFor)}
-              </div>
-              <div
-                className="text-xs mt-1"
-                style={{ color: "var(--color-seaweed-300)" }}
-              >
-                {stats.forPercentage.toFixed(1)}%
-              </div>
-            </div>
-            <div
-              className="p-4 rounded"
-              style={{ backgroundColor: "var(--color-stormy-teal-900)" }}
-            >
-              <div
-                className="text-xs mb-1"
-                style={{ color: "var(--color-stormy-teal-200)" }}
-              >
-                EN CONTRA
-              </div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: "var(--color-stormy-teal-200)" }}
-              >
-                {formatEther(stats.totalVotesAgainst)}
-              </div>
-              <div
-                className="text-xs mt-1"
-                style={{ color: "var(--color-stormy-teal-300)" }}
-              >
-                {stats.againstPercentage.toFixed(1)}%
-              </div>
-            </div>
-            <div
-              className="p-4 rounded"
-              style={{ backgroundColor: "var(--color-carbon-black-900)" }}
-            >
-              <div
-                className="text-xs mb-1"
-                style={{ color: "var(--color-carbon-black-600)" }}
-              >
-                ABSTENCIÓN
-              </div>
-              <div
-                className="text-2xl font-bold"
-                style={{ color: "var(--color-carbon-black-600)" }}
-              >
-                {formatEther(stats.totalVotesAbstain)}
-              </div>
-              <div
-                className="text-xs mt-1"
+          </div>
+          <div className="flex items-center gap-2">
+            {isLoading && (
+              <span
+                className="text-xs"
                 style={{ color: "var(--color-carbon-black-500)" }}
               >
-                {stats.abstainPercentage.toFixed(1)}%
-              </div>
-            </div>
+                Actualizando...
+              </span>
+            )}
+            <button
+              onClick={() => setShowGeneralSummary(!showGeneralSummary)}
+              className="px-2.5 py-1 rounded text-xs font-medium transition-colors"
+              style={{
+                backgroundColor: showGeneralSummary
+                  ? "var(--color-carbon-black-900)"
+                  : "var(--color-carbon-black-700)",
+                color: "var(--color-carbon-black-200)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor =
+                  "var(--color-carbon-black-800)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = showGeneralSummary
+                  ? "var(--color-carbon-black-900)"
+                  : "var(--color-carbon-black-700)";
+              }}
+            >
+              {showGeneralSummary ? "▼" : "▶"} Resumen General
+            </button>
           </div>
         </div>
 
-        {/* Proposal Status Summary */}
-        <div>
-          <h4
-            className="text-sm font-semibold mb-3"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Estado de Propuestas
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div
-              className="p-3 rounded text-center"
-              style={{ backgroundColor: "var(--color-stormy-teal-900)" }}
-            >
-              <div
-                className="text-lg font-bold"
-                style={{ color: "var(--color-stormy-teal-200)" }}
-              >
-                {stats.activeProposals}
-              </div>
-              <div
-                className="text-xs mt-1"
-                style={{ color: "var(--color-stormy-teal-300)" }}
-              >
-                Activas
+        {/* General Summary - Collapsible */}
+        {showGeneralSummary && (
+          <>
+            {/* Vote Totals */}
+            <div className="mb-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div
+                  className="p-2.5 rounded"
+                  style={{ backgroundColor: "var(--color-seaweed-900)" }}
+                >
+                  <div
+                    className="text-[10px] mb-0.5 font-medium"
+                    style={{ color: "var(--color-seaweed-200)" }}
+                  >
+                    A FAVOR
+                  </div>
+                  <div
+                    className="text-lg font-bold leading-tight"
+                    style={{ color: "var(--color-seaweed-200)" }}
+                  >
+                    {formatEther(stats.totalVotesFor)}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-seaweed-300)" }}
+                  >
+                    {stats.forPercentage.toFixed(1)}%
+                  </div>
+                </div>
+                <div
+                  className="p-2.5 rounded"
+                  style={{ backgroundColor: "var(--color-stormy-teal-900)" }}
+                >
+                  <div
+                    className="text-[10px] mb-0.5 font-medium"
+                    style={{ color: "var(--color-stormy-teal-200)" }}
+                  >
+                    EN CONTRA
+                  </div>
+                  <div
+                    className="text-lg font-bold leading-tight"
+                    style={{ color: "var(--color-stormy-teal-200)" }}
+                  >
+                    {formatEther(stats.totalVotesAgainst)}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-stormy-teal-300)" }}
+                  >
+                    {stats.againstPercentage.toFixed(1)}%
+                  </div>
+                </div>
+                <div
+                  className="p-2.5 rounded"
+                  style={{ backgroundColor: "var(--color-carbon-black-900)" }}
+                >
+                  <div
+                    className="text-[10px] mb-0.5 font-medium"
+                    style={{ color: "var(--color-carbon-black-600)" }}
+                  >
+                    ABSTENCIÓN
+                  </div>
+                  <div
+                    className="text-lg font-bold leading-tight"
+                    style={{ color: "var(--color-carbon-black-600)" }}
+                  >
+                    {formatEther(stats.totalVotesAbstain)}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-carbon-black-500)" }}
+                  >
+                    {stats.abstainPercentage.toFixed(1)}%
+                  </div>
+                </div>
               </div>
             </div>
-            <div
-              className="p-3 rounded text-center"
-              style={{ backgroundColor: "var(--color-seaweed-900)" }}
-            >
-              <div
-                className="text-lg font-bold"
-                style={{ color: "var(--color-seaweed-200)" }}
-              >
-                {stats.approvedProposals}
-              </div>
-              <div
-                className="text-xs mt-1"
-                style={{ color: "var(--color-seaweed-300)" }}
-              >
-                Aprobadas
-              </div>
-            </div>
-            <div
-              className="p-3 rounded text-center"
-              style={{ backgroundColor: "var(--color-stormy-teal-900)" }}
-            >
-              <div
-                className="text-lg font-bold"
-                style={{ color: "var(--color-stormy-teal-200)" }}
-              >
-                {stats.rejectedProposals}
-              </div>
-              <div
-                className="text-xs mt-1"
-                style={{ color: "var(--color-stormy-teal-300)" }}
-              >
-                Rechazadas
-              </div>
-            </div>
-            <div
-              className="p-3 rounded text-center"
-              style={{ backgroundColor: "var(--color-carbon-black-900)" }}
-            >
-              <div
-                className="text-lg font-bold"
-                style={{ color: "var(--color-carbon-black-600)" }}
-              >
-                {stats.executedProposals}
-              </div>
-              <div
-                className="text-xs mt-1"
-                style={{ color: "var(--color-carbon-black-500)" }}
-              >
-                Ejecutadas
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Total Votes Bar */}
-        {stats.totalVotes > 0n && (
-          <div className="mt-6">
-            <div
-              className="text-xs mb-2"
-              style={{ color: "var(--color-carbon-black-600)" }}
-            >
-              Distribución de Votos
+            {/* Proposal Status Summary */}
+            <div className="mb-3">
+              <div className="grid grid-cols-4 gap-2">
+                <div
+                  className="p-2 rounded text-center"
+                  style={{ backgroundColor: "var(--color-stormy-teal-900)" }}
+                >
+                  <div
+                    className="text-base font-bold leading-tight"
+                    style={{ color: "var(--color-stormy-teal-200)" }}
+                  >
+                    {stats.activeProposals}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-stormy-teal-300)" }}
+                  >
+                    Activas
+                  </div>
+                </div>
+                <div
+                  className="p-2 rounded text-center"
+                  style={{ backgroundColor: "var(--color-seaweed-900)" }}
+                >
+                  <div
+                    className="text-base font-bold leading-tight"
+                    style={{ color: "var(--color-seaweed-200)" }}
+                  >
+                    {stats.approvedProposals}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-seaweed-300)" }}
+                  >
+                    Aprobadas
+                  </div>
+                </div>
+                <div
+                  className="p-2 rounded text-center"
+                  style={{ backgroundColor: "var(--color-stormy-teal-900)" }}
+                >
+                  <div
+                    className="text-base font-bold leading-tight"
+                    style={{ color: "var(--color-stormy-teal-200)" }}
+                  >
+                    {stats.rejectedProposals}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-stormy-teal-300)" }}
+                  >
+                    Rechazadas
+                  </div>
+                </div>
+                <div
+                  className="p-2 rounded text-center"
+                  style={{ backgroundColor: "var(--color-carbon-black-900)" }}
+                >
+                  <div
+                    className="text-base font-bold leading-tight"
+                    style={{ color: "var(--color-carbon-black-600)" }}
+                  >
+                    {stats.executedProposals}
+                  </div>
+                  <div
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "var(--color-carbon-black-500)" }}
+                  >
+                    Ejecutadas
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="h-4 rounded-full overflow-hidden flex">
-              {stats.forPercentage > 0 && (
-                <div
-                  style={{
-                    width: `${stats.forPercentage}%`,
-                    backgroundColor: "var(--color-seaweed)",
-                  }}
-                  title={`A Favor: ${stats.forPercentage.toFixed(1)}%`}
-                />
-              )}
-              {stats.againstPercentage > 0 && (
-                <div
-                  style={{
-                    width: `${stats.againstPercentage}%`,
-                    backgroundColor: "var(--color-stormy-teal)",
-                  }}
-                  title={`En Contra: ${stats.againstPercentage.toFixed(1)}%`}
-                />
-              )}
-              {stats.abstainPercentage > 0 && (
-                <div
-                  style={{
-                    width: `${stats.abstainPercentage}%`,
-                    backgroundColor: "var(--color-carbon-black-600)",
-                  }}
-                  title={`Abstención: ${stats.abstainPercentage.toFixed(1)}%`}
-                />
-              )}
-            </div>
-          </div>
+
+            {/* Total Votes Bar */}
+            {stats.totalVotes > 0n && (
+              <div className="mt-2 mb-3">
+                <div className="h-2.5 rounded-full overflow-hidden flex">
+                  {stats.forPercentage > 0 && (
+                    <div
+                      style={{
+                        width: `${stats.forPercentage}%`,
+                        backgroundColor: "var(--color-seaweed)",
+                      }}
+                      title={`A Favor: ${stats.forPercentage.toFixed(1)}%`}
+                    />
+                  )}
+                  {stats.againstPercentage > 0 && (
+                    <div
+                      style={{
+                        width: `${stats.againstPercentage}%`,
+                        backgroundColor: "var(--color-stormy-teal)",
+                      }}
+                      title={`En Contra: ${stats.againstPercentage.toFixed(
+                        1
+                      )}%`}
+                    />
+                  )}
+                  {stats.abstainPercentage > 0 && (
+                    <div
+                      style={{
+                        width: `${stats.abstainPercentage}%`,
+                        backgroundColor: "var(--color-carbon-black-600)",
+                      }}
+                      title={`Abstención: ${stats.abstainPercentage.toFixed(
+                        1
+                      )}%`}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
+
+        {/* Individual Proposal Details */}
+        {Array.from(proposalsData.entries())
+          .sort((a, b) => Number(b[0] - a[0])) // Sort by ID descending
+          .map(([proposalId, proposalData]) => {
+            const getStatusColor = () => {
+              switch (proposalData.status) {
+                case "Activa":
+                  return {
+                    bg: "var(--color-stormy-teal-900)",
+                    text: "var(--color-stormy-teal-200)",
+                  };
+                case "Aprobada":
+                  return {
+                    bg: "var(--color-seaweed-900)",
+                    text: "var(--color-seaweed-200)",
+                  };
+                case "Rechazada":
+                  return {
+                    bg: "var(--color-stormy-teal-900)",
+                    text: "var(--color-stormy-teal-200)",
+                  };
+                default:
+                  return {
+                    bg: "var(--color-carbon-black-900)",
+                    text: "var(--color-carbon-black-600)",
+                  };
+              }
+            };
+            const statusColors = getStatusColor();
+
+            return (
+              <div
+                key={proposalId.toString()}
+                className="mt-2 p-2.5 rounded border"
+                style={{
+                  backgroundColor: "var(--color-alabaster-grey-700)",
+                  borderColor: "var(--color-carbon-black-300)",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: "var(--color-carbon-black-700)" }}
+                      >
+                        #{proposalData.id.toString()}
+                      </span>
+                      <span
+                        className="text-sm font-bold truncate"
+                        style={{ color: "var(--color-carbon-black)" }}
+                      >
+                        {proposalData.name ||
+                          `Propuesta #${proposalData.id.toString()}`}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0"
+                    style={{
+                      backgroundColor: statusColors.bg,
+                      color: statusColors.text,
+                    }}
+                  >
+                    {proposalData.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 mb-2">
+                  <div className="text-center">
+                    <div
+                      className="text-[10px] mb-0.5"
+                      style={{ color: "var(--color-carbon-black-600)" }}
+                    >
+                      A FAVOR
+                    </div>
+                    <div
+                      className="text-xs font-bold"
+                      style={{ color: "var(--color-seaweed)" }}
+                    >
+                      {formatEther(proposalData.votesFor)}
+                    </div>
+                    {proposalData.totalVotes > 0n && (
+                      <div
+                        className="text-[9px] mt-0.5"
+                        style={{ color: "var(--color-carbon-black-500)" }}
+                      >
+                        {proposalData.forPercentage.toFixed(1)}%
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div
+                      className="text-[10px] mb-0.5"
+                      style={{ color: "var(--color-carbon-black-600)" }}
+                    >
+                      EN CONTRA
+                    </div>
+                    <div
+                      className="text-xs font-bold"
+                      style={{ color: "var(--color-stormy-teal)" }}
+                    >
+                      {formatEther(proposalData.votesAgainst)}
+                    </div>
+                    {proposalData.totalVotes > 0n && (
+                      <div
+                        className="text-[9px] mt-0.5"
+                        style={{ color: "var(--color-carbon-black-500)" }}
+                      >
+                        {proposalData.againstPercentage.toFixed(1)}%
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div
+                      className="text-[10px] mb-0.5"
+                      style={{ color: "var(--color-carbon-black-600)" }}
+                    >
+                      ABSTENCIÓN
+                    </div>
+                    <div
+                      className="text-xs font-bold"
+                      style={{ color: "var(--color-carbon-black-600)" }}
+                    >
+                      {formatEther(proposalData.votesAbstain)}
+                    </div>
+                    {proposalData.totalVotes > 0n && (
+                      <div
+                        className="text-[9px] mt-0.5"
+                        style={{ color: "var(--color-carbon-black-500)" }}
+                      >
+                        {proposalData.abstainPercentage.toFixed(1)}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {proposalData.totalVotes > 0n && (
+                  <div className="h-1.5 rounded-full overflow-hidden flex">
+                    {proposalData.forPercentage > 0 && (
+                      <div
+                        style={{
+                          width: `${proposalData.forPercentage}%`,
+                          backgroundColor: "var(--color-seaweed)",
+                        }}
+                      />
+                    )}
+                    {proposalData.againstPercentage > 0 && (
+                      <div
+                        style={{
+                          width: `${proposalData.againstPercentage}%`,
+                          backgroundColor: "var(--color-stormy-teal)",
+                        }}
+                      />
+                    )}
+                    {proposalData.abstainPercentage > 0 && (
+                      <div
+                        style={{
+                          width: `${proposalData.abstainPercentage}%`,
+                          backgroundColor: "var(--color-carbon-black-600)",
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
       </div>
     </>
   );

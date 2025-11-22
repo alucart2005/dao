@@ -116,12 +116,6 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
           >
             {(proposal as any).name || `Propuesta #${proposal.id.toString()}`}
           </h3>
-          <p
-            className="text-xs mt-1"
-            style={{ color: "var(--color-carbon-black-600)" }}
-          >
-            Propuesta #{proposal.id.toString()}
-          </p>
         </div>
         <span
           className="px-3 py-1 rounded text-sm font-semibold"

@@ -280,33 +280,27 @@ export function FundingPanel() {
       </h2>
 
       <div className="space-y-4">
-        {/* Anvil Status and Controls */}
-        <div
-          className="p-4 rounded-lg mb-4"
-          style={{
-            backgroundColor: anvilStatus.running ? "#d1fae5" : "#fee2e2",
-            border: `1px solid ${anvilStatus.running ? "#10b981" : "#ef4444"}`,
-            color: anvilStatus.running ? "#065f46" : "#991b1b",
-          }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">
-                {anvilStatus.running ? "🟢" : "🔴"}
-              </span>
-              <div>
-                <p className="font-semibold text-sm">
-                  Anvil: {anvilStatus.running ? "Corriendo" : "Detenido"}
-                </p>
-                <p className="text-xs opacity-75">
-                  {anvilStatus.running
-                    ? "Blockchain local activa"
-                    : "Blockchain local no disponible"}
-                </p>
+        {/* Anvil Status and Controls - Only show when Anvil is not running */}
+        {!anvilStatus.running && (
+          <div
+            className="p-4 rounded-lg mb-4"
+            style={{
+              backgroundColor: "#fee2e2",
+              border: "1px solid #ef4444",
+              color: "#991b1b",
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔴</span>
+                <div>
+                  <p className="font-semibold text-sm">Anvil: Detenido</p>
+                  <p className="text-xs opacity-75">
+                    Blockchain local no disponible
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              {!anvilStatus.running ? (
+              <div className="flex gap-2">
                 <button
                   onClick={handleStartAnvil}
                   disabled={isStartingAnvil || anvilStatus.checking}
@@ -326,30 +320,10 @@ export function FundingPanel() {
                 >
                   {isStartingAnvil ? "Iniciando..." : "▶ Iniciar Anvil"}
                 </button>
-              ) : (
-                <button
-                  onClick={handleStopAnvil}
-                  disabled={isStoppingAnvil}
-                  className="px-3 py-1.5 rounded text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    backgroundColor: "#ef4444",
-                    color: "white",
-                  }}
-                  onMouseEnter={(e) =>
-                    !e.currentTarget.disabled &&
-                    (e.currentTarget.style.backgroundColor = "#dc2626")
-                  }
-                  onMouseLeave={(e) =>
-                    !e.currentTarget.disabled &&
-                    (e.currentTarget.style.backgroundColor = "#ef4444")
-                  }
-                >
-                  {isStoppingAnvil ? "Deteniendo..." : "⏹ Detener Anvil"}
-                </button>
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {contractNotDeployed && (
           <div
