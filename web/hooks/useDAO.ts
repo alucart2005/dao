@@ -127,17 +127,39 @@ export function useTotalBalance() {
 }
 
 export function useProposal(proposalId: bigint | undefined) {
-  const { data: proposal, refetch } = useReadContract({
+  const {
+    data: proposal,
+    refetch,
+    error,
+    isLoading,
+  } = useReadContract({
     address: CONTRACTS.DAO_VOTING,
     abi: DAO_VOTING_ABI,
     functionName: "getProposal",
     args: proposalId !== undefined ? [proposalId] : undefined,
     query: {
-      enabled: proposalId !== undefined,
+      enabled: proposalId !== undefined && CONTRACTS.DAO_VOTING !== "0x0",
+      refetchInterval: (query) => {
+        // Disable auto-refetch if contract not deployed
+        if (
+          query.state.error &&
+          isContractNotDeployedError(query.state.error)
+        ) {
+          return false;
+        }
+        return false; // Don't auto-refetch proposals (only on manual refresh)
+      },
+      retry: (failureCount, error) => {
+        // Don't retry if contract not deployed
+        if (isContractNotDeployedError(error)) {
+          return false;
+        }
+        return failureCount < 2; // Only retry once for network issues
+      },
     },
   });
 
-  return { proposal, refetch };
+  return { proposal, refetch, error, isLoading };
 }
 
 export function useUserVote(proposalId: bigint | undefined) {

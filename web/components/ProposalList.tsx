@@ -1,62 +1,205 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useReadContract } from "wagmi";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { CONTRACTS, DAO_VOTING_ABI } from "@/lib/config/contracts";
 import { ProposalCard } from "./ProposalCard";
-import { createPublicClient, http } from "viem";
+import { createPublicClient, http, isAddress } from "viem";
 import { localChain } from "@/lib/config/chain";
 
 interface ProposalListProps {
   refreshTrigger?: number;
 }
 
-export function ProposalList({ refreshTrigger = 0 }: ProposalListProps) {
+// Helper to detect contract not deployed errors
+function isContractNotDeployedError(error: unknown): boolean {
+  if (!error) return false;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return (
+    errorMessage.includes("returned no data") ||
+    errorMessage.includes("0x") ||
+    errorMessage.includes("contract does not have the function") ||
+    errorMessage.includes("address is not a contract") ||
+    errorMessage.includes("Contract code is empty")
+  );
+}
+
+function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
   const [proposalIds, setProposalIds] = useState<bigint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [contractDeployed, setContractDeployed] = useState<boolean | null>(
+    null
+  );
+  const isMountedRef = useRef(true);
+  const verificationDoneRef = useRef(false);
+  const fetchingRef = useRef(false);
 
-  useEffect(() => {
-    const findProposals = async () => {
-      setLoading(true);
-      const found: bigint[] = [];
-      const publicClient = createPublicClient({
+  // Memoize public client to avoid recreating it
+  const publicClient = useMemo(
+    () =>
+      createPublicClient({
         chain: localChain,
         transport: http(
           process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8545"
         ),
-      });
+      }),
+    []
+  );
 
-      // Check up to 100 proposals
-      for (let i = 1; i <= 100; i++) {
-        try {
-          const proposal = await publicClient.readContract({
-            address: CONTRACTS.DAO_VOTING,
-            abi: DAO_VOTING_ABI,
-            functionName: "getProposal",
-            args: [BigInt(i)],
-          });
-          // If proposal exists (id is not 0), add it
-          if (proposal && proposal.id !== 0n) {
-            found.push(BigInt(i));
-          } else {
-            // If we get a proposal with id 0, it means no more proposals exist
-            break;
+  // Verify contract is deployed first - ONLY ONCE
+  useEffect(() => {
+    if (verificationDoneRef.current) return;
+
+    const verifyContract = async () => {
+      if (
+        !CONTRACTS.DAO_VOTING ||
+        CONTRACTS.DAO_VOTING === "0x0" ||
+        !isAddress(CONTRACTS.DAO_VOTING)
+      ) {
+        if (isMountedRef.current) {
+          setContractDeployed(false);
+          setError("Contract address not configured");
+          setLoading(false);
+          verificationDoneRef.current = true;
+        }
+        return;
+      }
+
+      try {
+        // Check if contract has code
+        const code = await publicClient.getBytecode({
+          address: CONTRACTS.DAO_VOTING,
+        });
+
+        const deployed = code && code !== "0x" && code.length > 2;
+
+        if (isMountedRef.current) {
+          setContractDeployed(deployed);
+          verificationDoneRef.current = true;
+
+          if (!deployed) {
+            setError("Contract not deployed");
+            setLoading(false);
           }
-        } catch (error) {
-          // If contract call fails, likely no more proposals
-          // Continue checking a few more in case of network issues
-          if (i > 10) {
-            break;
-          }
+          // If deployed, keep loading true - the second useEffect will handle it
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          setContractDeployed(false);
+          setError("Failed to verify contract");
+          setLoading(false);
+          verificationDoneRef.current = true;
         }
       }
-      setProposalIds(found);
-      setLoading(false);
+    };
+
+    verifyContract();
+  }, [publicClient]); // Only depends on publicClient (memoized)
+
+  // Find proposals only if contract is deployed - DO NOT MODIFY contractDeployed here
+  useEffect(() => {
+    // Don't run if contract is not deployed or verification is pending
+    if (contractDeployed === false || contractDeployed === null) {
+      return;
+    }
+
+    // Prevent multiple simultaneous executions
+    if (fetchingRef.current) {
+      return;
+    }
+
+    fetchingRef.current = true;
+    let cancelled = false;
+
+    const findProposals = async () => {
+      if (!isMountedRef.current || cancelled) {
+        fetchingRef.current = false;
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      const found: bigint[] = [];
+
+      try {
+        // Check up to 100 proposals
+        for (let i = 1; i <= 100; i++) {
+          if (cancelled || !isMountedRef.current) break;
+
+          try {
+            const proposal = await publicClient.readContract({
+              address: CONTRACTS.DAO_VOTING,
+              abi: DAO_VOTING_ABI,
+              functionName: "getProposal",
+              args: [BigInt(i)],
+            });
+
+            // If proposal exists (id is not 0), add it
+            if (proposal && proposal.id !== 0n) {
+              found.push(BigInt(i));
+            } else {
+              // If we get a proposal with id 0, it means no more proposals exist
+              break;
+            }
+          } catch (err) {
+            // Check if it's a contract not deployed error
+            if (isContractNotDeployedError(err)) {
+              // If first call failed, contract might not be deployed
+              if (i === 1) {
+                // Don't modify contractDeployed here - just set error
+                if (!cancelled && isMountedRef.current) {
+                  setError("Contract not deployed");
+                  setLoading(false);
+                }
+                fetchingRef.current = false;
+                return;
+              }
+              // Otherwise, likely no more proposals
+              break;
+            }
+            // For other errors, continue checking a few more in case of network issues
+            if (i > 10) {
+              break;
+            }
+          }
+        }
+
+        if (!cancelled && isMountedRef.current) {
+          setProposalIds(found);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled && isMountedRef.current) {
+          if (isContractNotDeployedError(err)) {
+            setError("Contract not deployed");
+          } else {
+            setError("Failed to load proposals");
+          }
+          setLoading(false);
+        }
+      } finally {
+        fetchingRef.current = false;
+      }
     };
 
     findProposals();
-  }, [refreshTrigger]);
 
+    return () => {
+      cancelled = true;
+      fetchingRef.current = false;
+    };
+  }, [refreshTrigger, contractDeployed, publicClient]); // Include publicClient but it's memoized
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Always render the component - never return null or disappear
+  // Show appropriate state based on contract deployment status
   return (
     <div className="space-y-4">
       <h2
@@ -65,24 +208,83 @@ export function ProposalList({ refreshTrigger = 0 }: ProposalListProps) {
       >
         Listado de Propuestas
       </h2>
-      {loading ? (
+
+      {/* Contract verification pending */}
+      {contractDeployed === null && (
         <div style={{ color: "var(--color-carbon-black-600)" }}>
-          Cargando propuestas...
+          Verificando contrato...
         </div>
-      ) : proposalIds.length === 0 ? (
-        <div style={{ color: "var(--color-carbon-black-600)" }}>
-          No hay propuestas disponibles
+      )}
+
+      {/* Contract not deployed */}
+      {contractDeployed === false && (
+        <div
+          className="p-4 rounded-lg"
+          style={{
+            backgroundColor: "#fef3c7",
+            border: "1px solid #fbbf24",
+            color: "#92400e",
+          }}
+        >
+          <p className="font-semibold mb-2">⚠️ Contrato no desplegado</p>
+          <p className="text-sm mb-2">
+            El contrato inteligente no está desplegado. Por favor, despliega los
+            contratos primero.
+          </p>
+          <details className="text-xs mt-2">
+            <summary className="cursor-pointer font-semibold">
+              Ver instrucciones
+            </summary>
+            <div className="mt-2 p-2 bg-white rounded">
+              <code className="block">
+                cd sc
+                <br />
+                forge script script/DeployLocal.s.sol:DeployLocal --rpc-url
+                http://localhost:8545 --broadcast
+              </code>
+            </div>
+          </details>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {proposalIds
-            .slice()
-            .reverse()
-            .map((id) => (
-              <ProposalCard key={id.toString()} proposalId={id} />
-            ))}
-        </div>
+      )}
+
+      {/* Contract deployed - show proposals */}
+      {contractDeployed === true && (
+        <>
+          {loading ? (
+            <div style={{ color: "var(--color-carbon-black-600)" }}>
+              Cargando propuestas...
+            </div>
+          ) : error ? (
+            <div
+              className="p-4 rounded-lg"
+              style={{
+                backgroundColor: "#fee2e2",
+                border: "1px solid #fca5a5",
+                color: "#991b1b",
+              }}
+            >
+              <p className="font-semibold">Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          ) : proposalIds.length === 0 ? (
+            <div style={{ color: "var(--color-carbon-black-600)" }}>
+              No hay propuestas disponibles
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {proposalIds
+                .slice()
+                .reverse()
+                .map((id) => (
+                  <ProposalCard key={id.toString()} proposalId={id} />
+                ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
+
+// Memoize component to prevent unnecessary re-renders
+export const ProposalList = memo(ProposalListComponent);

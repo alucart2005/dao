@@ -10,9 +10,41 @@ interface ProposalCardProps {
   onUpdate?: () => void;
 }
 
-export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
-  const { proposal, refetch } = useProposal(proposalId);
+// Helper to detect contract not deployed errors
+function isContractNotDeployedError(error: unknown): boolean {
+  if (!error) return false;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return (
+    errorMessage.includes("returned no data") ||
+    errorMessage.includes("0x") ||
+    errorMessage.includes("contract does not have the function") ||
+    errorMessage.includes("address is not a contract")
+  );
+}
 
+export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
+  const { proposal, refetch, error, isLoading } = useProposal(proposalId);
+
+  // Don't render if contract not deployed (let ProposalList handle the error)
+  if (error && isContractNotDeployedError(error)) {
+    return null;
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div
+        className="p-6 rounded-lg shadow"
+        style={{ backgroundColor: "var(--color-alabaster-grey)" }}
+      >
+        <div style={{ color: "var(--color-carbon-black-600)" }}>
+          Cargando propuesta...
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if proposal doesn't exist or has id 0
   if (!proposal || proposal.id === 0n) {
     return null;
   }
