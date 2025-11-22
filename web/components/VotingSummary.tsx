@@ -2,12 +2,17 @@
 
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { formatEther } from "viem";
-import { useProposal } from "@/hooks/useDAO";
+import { useProposal, useUserVote } from "@/hooks/useDAO";
 import { getProposalStatus } from "@/lib/utils";
+import { useAccount } from "wagmi";
+import { useGaslessVote } from "@/hooks/useGaslessVote";
+import { VoteType } from "@/lib/config/contracts";
 
 interface VotingSummaryProps {
   proposalIds: bigint[];
   isLoading?: boolean;
+  onToggleProposalCards?: () => void;
+  showProposalCards?: boolean;
 }
 
 interface ProposalData {
@@ -84,9 +89,279 @@ function ProposalDataLoader({
   return null;
 }
 
+function ProposalVoteCard({
+  proposalId,
+  proposalData,
+  statusColors,
+  isActive,
+}: {
+  proposalId: bigint;
+  proposalData: ProposalData;
+  statusColors: { bg: string; text: string };
+  isActive: boolean;
+}) {
+  const { isConnected } = useAccount();
+  const { vote, isPending, error, txHash } = useGaslessVote();
+  const userVote = useUserVote(proposalId);
+
+  const handleVote = async (voteType: number) => {
+    await vote(proposalId, voteType);
+    // Refresh will be handled by the parent component's data loading
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  };
+
+  return (
+    <div
+      className="mt-2 p-2.5 rounded border"
+      style={{
+        backgroundColor: "var(--color-alabaster-grey-700)",
+        borderColor: "var(--color-carbon-black-300)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              #{proposalData.id.toString()}
+            </span>
+            <span
+              className="text-sm font-bold truncate"
+              style={{ color: "var(--color-carbon-black)" }}
+            >
+              {proposalData.name || `Propuesta #${proposalData.id.toString()}`}
+            </span>
+          </div>
+        </div>
+        <span
+          className="px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0"
+          style={{
+            backgroundColor: statusColors.bg,
+            color: statusColors.text,
+          }}
+        >
+          {proposalData.status}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5 mb-2">
+        {/* A FAVOR Button */}
+        <div className="text-center">
+          <button
+            onClick={() => handleVote(VoteType.FOR)}
+            disabled={isPending || !isActive || !isConnected}
+            className="w-full px-2 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-medium mb-0.5"
+            style={{
+              backgroundColor:
+                userVote === VoteType.FOR
+                  ? "var(--color-seaweed)"
+                  : "var(--color-seaweed-900)",
+              color:
+                userVote === VoteType.FOR
+                  ? "white"
+                  : "var(--color-seaweed-200)",
+            }}
+            onMouseEnter={(e) =>
+              !e.currentTarget.disabled &&
+              userVote !== VoteType.FOR &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-seaweed-800)")
+            }
+            onMouseLeave={(e) =>
+              !e.currentTarget.disabled &&
+              userVote !== VoteType.FOR &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-seaweed-900)")
+            }
+          >
+            A FAVOR
+          </button>
+          <div
+            className="text-xs font-bold"
+            style={{ color: "var(--color-seaweed)" }}
+          >
+            {formatEther(proposalData.votesFor)}
+          </div>
+          {proposalData.totalVotes > 0n && (
+            <div
+              className="text-[9px] mt-0.5"
+              style={{ color: "var(--color-carbon-black-500)" }}
+            >
+              {proposalData.forPercentage.toFixed(1)}%
+            </div>
+          )}
+        </div>
+
+        {/* EN CONTRA Button */}
+        <div className="text-center">
+          <button
+            onClick={() => handleVote(VoteType.AGAINST)}
+            disabled={isPending || !isActive || !isConnected}
+            className="w-full px-2 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-medium mb-0.5"
+            style={{
+              backgroundColor:
+                userVote === VoteType.AGAINST
+                  ? "var(--color-stormy-teal)"
+                  : "var(--color-stormy-teal-900)",
+              color:
+                userVote === VoteType.AGAINST
+                  ? "white"
+                  : "var(--color-stormy-teal-200)",
+            }}
+            onMouseEnter={(e) =>
+              !e.currentTarget.disabled &&
+              userVote !== VoteType.AGAINST &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-stormy-teal-800)")
+            }
+            onMouseLeave={(e) =>
+              !e.currentTarget.disabled &&
+              userVote !== VoteType.AGAINST &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-stormy-teal-900)")
+            }
+          >
+            EN CONTRA
+          </button>
+          <div
+            className="text-xs font-bold"
+            style={{ color: "var(--color-stormy-teal)" }}
+          >
+            {formatEther(proposalData.votesAgainst)}
+          </div>
+          {proposalData.totalVotes > 0n && (
+            <div
+              className="text-[9px] mt-0.5"
+              style={{ color: "var(--color-carbon-black-500)" }}
+            >
+              {proposalData.againstPercentage.toFixed(1)}%
+            </div>
+          )}
+        </div>
+
+        {/* ABSTENCIÓN Button */}
+        <div className="text-center">
+          <button
+            onClick={() => handleVote(VoteType.ABSTAIN)}
+            disabled={isPending || !isActive || !isConnected}
+            className="w-full px-2 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-medium mb-0.5"
+            style={{
+              backgroundColor:
+                userVote === VoteType.ABSTAIN
+                  ? "var(--color-carbon-black-600)"
+                  : "var(--color-carbon-black-900)",
+              color:
+                userVote === VoteType.ABSTAIN
+                  ? "white"
+                  : "var(--color-carbon-black-600)",
+            }}
+            onMouseEnter={(e) =>
+              !e.currentTarget.disabled &&
+              userVote !== VoteType.ABSTAIN &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-carbon-black-800)")
+            }
+            onMouseLeave={(e) =>
+              !e.currentTarget.disabled &&
+              userVote !== VoteType.ABSTAIN &&
+              (e.currentTarget.style.backgroundColor =
+                "var(--color-carbon-black-900)")
+            }
+          >
+            ABSTENCIÓN
+          </button>
+          <div
+            className="text-xs font-bold"
+            style={{ color: "var(--color-carbon-black-600)" }}
+          >
+            {formatEther(proposalData.votesAbstain)}
+          </div>
+          {proposalData.totalVotes > 0n && (
+            <div
+              className="text-[9px] mt-0.5"
+              style={{ color: "var(--color-carbon-black-500)" }}
+            >
+              {proposalData.abstainPercentage.toFixed(1)}%
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Status messages */}
+      {isPending && (
+        <div
+          className="text-[10px] mb-1"
+          style={{ color: "var(--color-stormy-teal)" }}
+        >
+          Firmando y enviando voto...
+        </div>
+      )}
+      {error && (
+        <div
+          className="text-[10px] mb-1"
+          style={{ color: "var(--color-stormy-teal)" }}
+        >
+          Error: {error.message}
+        </div>
+      )}
+      {txHash && (
+        <div
+          className="text-[10px] mb-1"
+          style={{ color: "var(--color-seaweed)" }}
+        >
+          Voto enviado! TX: {txHash.slice(0, 10)}...
+        </div>
+      )}
+      {!isConnected && isActive && (
+        <div
+          className="text-[10px] mb-1"
+          style={{ color: "var(--color-carbon-black-600)" }}
+        >
+          Conecta tu wallet para votar
+        </div>
+      )}
+
+      {proposalData.totalVotes > 0n && (
+        <div className="h-1.5 rounded-full overflow-hidden flex mt-1">
+          {proposalData.forPercentage > 0 && (
+            <div
+              style={{
+                width: `${proposalData.forPercentage}%`,
+                backgroundColor: "var(--color-seaweed)",
+              }}
+            />
+          )}
+          {proposalData.againstPercentage > 0 && (
+            <div
+              style={{
+                width: `${proposalData.againstPercentage}%`,
+                backgroundColor: "var(--color-stormy-teal)",
+              }}
+            />
+          )}
+          {proposalData.abstainPercentage > 0 && (
+            <div
+              style={{
+                width: `${proposalData.abstainPercentage}%`,
+                backgroundColor: "var(--color-carbon-black-600)",
+              }}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function VotingSummary({
   proposalIds,
   isLoading = false,
+  onToggleProposalCards,
+  showProposalCards = false,
 }: VotingSummaryProps) {
   const [proposalsData, setProposalsData] = useState<Map<bigint, ProposalData>>(
     new Map()
@@ -252,6 +527,30 @@ export function VotingSummary({
             >
               {showGeneralSummary ? "▼" : "▶"} Resumen General
             </button>
+            {onToggleProposalCards && (
+              <button
+                onClick={onToggleProposalCards}
+                className="px-2.5 py-1 rounded text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: showProposalCards
+                    ? "var(--color-seaweed-900)"
+                    : "var(--color-seaweed-700)",
+                  color: "var(--color-seaweed-200)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = showProposalCards
+                    ? "var(--color-seaweed-800)"
+                    : "var(--color-seaweed-600)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = showProposalCards
+                    ? "var(--color-seaweed-900)"
+                    : "var(--color-seaweed-700)";
+                }}
+              >
+                {showProposalCards ? "▼" : "▶"} Ver Propuestas
+              </button>
+            )}
           </div>
         </div>
 
@@ -477,143 +776,18 @@ export function VotingSummary({
               }
             };
             const statusColors = getStatusColor();
+            const now = BigInt(Math.floor(Date.now() / 1000));
+            const isActive =
+              !proposalData.executed && now <= proposalData.deadline;
 
             return (
-              <div
+              <ProposalVoteCard
                 key={proposalId.toString()}
-                className="mt-2 p-2.5 rounded border"
-                style={{
-                  backgroundColor: "var(--color-alabaster-grey-700)",
-                  borderColor: "var(--color-carbon-black-300)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-xs font-semibold"
-                        style={{ color: "var(--color-carbon-black-700)" }}
-                      >
-                        #{proposalData.id.toString()}
-                      </span>
-                      <span
-                        className="text-sm font-bold truncate"
-                        style={{ color: "var(--color-carbon-black)" }}
-                      >
-                        {proposalData.name ||
-                          `Propuesta #${proposalData.id.toString()}`}
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    className="px-2 py-0.5 rounded text-[10px] font-semibold flex-shrink-0"
-                    style={{
-                      backgroundColor: statusColors.bg,
-                      color: statusColors.text,
-                    }}
-                  >
-                    {proposalData.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1.5 mb-2">
-                  <div className="text-center">
-                    <div
-                      className="text-[10px] mb-0.5"
-                      style={{ color: "var(--color-carbon-black-600)" }}
-                    >
-                      A FAVOR
-                    </div>
-                    <div
-                      className="text-xs font-bold"
-                      style={{ color: "var(--color-seaweed)" }}
-                    >
-                      {formatEther(proposalData.votesFor)}
-                    </div>
-                    {proposalData.totalVotes > 0n && (
-                      <div
-                        className="text-[9px] mt-0.5"
-                        style={{ color: "var(--color-carbon-black-500)" }}
-                      >
-                        {proposalData.forPercentage.toFixed(1)}%
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <div
-                      className="text-[10px] mb-0.5"
-                      style={{ color: "var(--color-carbon-black-600)" }}
-                    >
-                      EN CONTRA
-                    </div>
-                    <div
-                      className="text-xs font-bold"
-                      style={{ color: "var(--color-stormy-teal)" }}
-                    >
-                      {formatEther(proposalData.votesAgainst)}
-                    </div>
-                    {proposalData.totalVotes > 0n && (
-                      <div
-                        className="text-[9px] mt-0.5"
-                        style={{ color: "var(--color-carbon-black-500)" }}
-                      >
-                        {proposalData.againstPercentage.toFixed(1)}%
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <div
-                      className="text-[10px] mb-0.5"
-                      style={{ color: "var(--color-carbon-black-600)" }}
-                    >
-                      ABSTENCIÓN
-                    </div>
-                    <div
-                      className="text-xs font-bold"
-                      style={{ color: "var(--color-carbon-black-600)" }}
-                    >
-                      {formatEther(proposalData.votesAbstain)}
-                    </div>
-                    {proposalData.totalVotes > 0n && (
-                      <div
-                        className="text-[9px] mt-0.5"
-                        style={{ color: "var(--color-carbon-black-500)" }}
-                      >
-                        {proposalData.abstainPercentage.toFixed(1)}%
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {proposalData.totalVotes > 0n && (
-                  <div className="h-1.5 rounded-full overflow-hidden flex">
-                    {proposalData.forPercentage > 0 && (
-                      <div
-                        style={{
-                          width: `${proposalData.forPercentage}%`,
-                          backgroundColor: "var(--color-seaweed)",
-                        }}
-                      />
-                    )}
-                    {proposalData.againstPercentage > 0 && (
-                      <div
-                        style={{
-                          width: `${proposalData.againstPercentage}%`,
-                          backgroundColor: "var(--color-stormy-teal)",
-                        }}
-                      />
-                    )}
-                    {proposalData.abstainPercentage > 0 && (
-                      <div
-                        style={{
-                          width: `${proposalData.abstainPercentage}%`,
-                          backgroundColor: "var(--color-carbon-black-600)",
-                        }}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
+                proposalId={proposalId}
+                proposalData={proposalData}
+                statusColors={statusColors}
+                isActive={isActive}
+              />
             );
           })}
       </div>

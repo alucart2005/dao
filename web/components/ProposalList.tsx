@@ -31,6 +31,8 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
   const [contractDeployed, setContractDeployed] = useState<boolean | null>(
     null
   );
+  const [showProposalCards, setShowProposalCards] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const isMountedRef = useRef(true);
   const verificationDoneRef = useRef(false);
   const fetchingRef = useRef(false);
@@ -245,12 +247,291 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
   // Show appropriate state based on contract deployment status
   return (
     <div className="space-y-4">
-      <h2
-        className="text-2xl font-bold"
-        style={{ color: "var(--color-carbon-black)" }}
-      >
-        Listado de Propuestas
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2
+          className="text-2xl font-bold"
+          style={{ color: "var(--color-carbon-black)" }}
+        >
+          Panel de Votaciones
+        </h2>
+        <button
+          onClick={() => setShowHelp(!showHelp)}
+          className="px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2"
+          style={{
+            backgroundColor: showHelp
+              ? "var(--color-stormy-teal)"
+              : "var(--color-stormy-teal-900)",
+            color: showHelp ? "white" : "var(--color-stormy-teal-200)",
+          }}
+          onMouseEnter={(e) => {
+            if (!showHelp) {
+              e.currentTarget.style.backgroundColor =
+                "var(--color-stormy-teal-800)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showHelp) {
+              e.currentTarget.style.backgroundColor =
+                "var(--color-stormy-teal-900)";
+            }
+          }}
+        >
+          <span>❓</span>
+          <span>{showHelp ? "Ocultar Ayuda" : "Ayuda"}</span>
+        </button>
+      </div>
+
+      {/* Help Modal - Floating Window with Blur Background */}
+      {showHelp && (
+        <>
+          {/* Backdrop with enhanced blur and transparency */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowHelp(false)}
+            style={{
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
+          />
+
+          {/* Modal Window */}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowHelp(false)}
+          >
+            <div
+              className="relative w-full max-w-3xl max-h-[90vh] rounded-lg shadow-2xl border overflow-hidden flex flex-col"
+              style={{
+                backgroundColor: "var(--color-alabaster-grey-900)",
+                borderColor: "var(--color-stormy-teal-300)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between p-4 border-b"
+                style={{
+                  backgroundColor: "var(--color-stormy-teal-900)",
+                  borderColor: "var(--color-stormy-teal-300)",
+                }}
+              >
+                <h3
+                  className="text-xl font-bold flex items-center gap-2"
+                  style={{ color: "var(--color-stormy-teal-200)" }}
+                >
+                  <span>📚</span>
+                  <span>Guía del Panel de Votaciones</span>
+                </h3>
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="p-1.5 rounded transition-colors hover:bg-opacity-80"
+                  style={{
+                    backgroundColor: "var(--color-stormy-teal-800)",
+                    color: "var(--color-stormy-teal-200)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--color-stormy-teal-700)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--color-stormy-teal-800)";
+                  }}
+                >
+                  <span className="text-lg">×</span>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div
+                className="flex-1 overflow-y-auto p-6"
+                style={{ backgroundColor: "var(--color-alabaster-grey-900)" }}
+              >
+                <div
+                  className="space-y-4 text-sm"
+                  style={{ color: "var(--color-carbon-black-700)" }}
+                >
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      ¿Qué es este panel?
+                    </h4>
+                    <p className="mb-2">
+                      El Panel de Votaciones es tu centro de control para
+                      participar en la gobernanza del DAO. Aquí puedes ver todas
+                      las propuestas activas, votar sobre ellas y consultar los
+                      resultados de las votaciones en tiempo real.
+                    </p>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      📊 Resumen de Votaciones
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>
+                        <strong>Resumen General:</strong> Muestra estadísticas
+                        agregadas de todas las propuestas (total de votos,
+                        propuestas activas, aprobadas, etc.)
+                      </li>
+                      <li>
+                        <strong>Detalles por Propuesta:</strong> Cada propuesta
+                        muestra sus votos individuales (A FAVOR, EN CONTRA,
+                        ABSTENCIÓN) con porcentajes y barras de progreso.
+                      </li>
+                      <li>
+                        <strong>Botones de Votación:</strong> Puedes votar
+                        directamente desde el resumen haciendo clic en los
+                        botones A FAVOR, EN CONTRA o ABSTENCIÓN de cada
+                        propuesta.
+                      </li>
+                    </ul>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      🗳️ Cómo Votar
+                    </h4>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>
+                        <strong>Conecta tu wallet:</strong> Asegúrate de tener
+                        tu wallet conectada (MetaMask, etc.)
+                      </li>
+                      <li>
+                        <strong>Selecciona tu voto:</strong> En el resumen, haz
+                        clic en el botón correspondiente (A FAVOR, EN CONTRA o
+                        ABSTENCIÓN) de la propuesta que deseas votar.
+                      </li>
+                      <li>
+                        <strong>Firma la transacción:</strong> Tu wallet te
+                        pedirá firmar la transacción. Las votaciones son sin gas
+                        (gasless), por lo que no pagarás comisiones.
+                      </li>
+                      <li>
+                        <strong>Confirma:</strong> Una vez firmada, tu voto se
+                        enviará automáticamente. Verás un mensaje de
+                        confirmación con el hash de la transacción.
+                      </li>
+                    </ol>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      📋 Ver Propuestas Detalladas
+                    </h4>
+                    <p className="mb-2">
+                      Para ver información completa de cada propuesta
+                      (beneficiario, monto, fecha límite, etc.), haz clic en el
+                      botón <strong>"▶ Ver Propuestas"</strong> en el resumen.
+                      Esto mostrará las tarjetas detalladas de cada propuesta.
+                    </p>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      🏷️ Estados de las Propuestas
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>
+                        <strong>Activa:</strong> La propuesta está abierta para
+                        votación y aún no ha alcanzado su fecha límite.
+                      </li>
+                      <li>
+                        <strong>Aprobada:</strong> La propuesta recibió más
+                        votos a favor que en contra y puede ser ejecutada.
+                      </li>
+                      <li>
+                        <strong>Rechazada:</strong> La propuesta recibió más
+                        votos en contra que a favor.
+                      </li>
+                      <li>
+                        <strong>Ejecutada:</strong> La propuesta fue aprobada y
+                        ya se ejecutó (se transfirieron los fondos al
+                        beneficiario).
+                      </li>
+                    </ul>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      💡 Consejos
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>
+                        Solo puedes votar una vez por propuesta. Si cambias de
+                        opinión, puedes votar nuevamente y tu voto anterior será
+                        reemplazado.
+                      </li>
+                      <li>
+                        Las votaciones son sin gas gracias a las
+                        meta-transacciones. No necesitas ETH para votar.
+                      </li>
+                      <li>
+                        El panel se actualiza automáticamente. Si no ves cambios
+                        recientes, espera unos segundos o recarga la página.
+                      </li>
+                      <li>
+                        Para crear nuevas propuestas, usa el formulario "Crear
+                        Propuesta" en la parte superior de la página.
+                      </li>
+                    </ul>
+                  </section>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                className="p-4 border-t flex justify-end"
+                style={{
+                  backgroundColor: "var(--color-alabaster-grey-800)",
+                  borderColor: "var(--color-carbon-black-300)",
+                }}
+              >
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="px-4 py-2 rounded font-medium transition-colors"
+                  style={{
+                    backgroundColor: "var(--color-stormy-teal)",
+                    color: "white",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--color-stormy-teal-600)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--color-stormy-teal)";
+                  }}
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Contract verification pending */}
       {contractDeployed === null && (
@@ -333,26 +614,37 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
           ) : (
             <div className="space-y-4">
               {/* Voting Summary */}
-              <VotingSummary proposalIds={proposalIds} isLoading={loading} />
+              <VotingSummary
+                proposalIds={proposalIds}
+                isLoading={loading}
+                onToggleProposalCards={() =>
+                  setShowProposalCards(!showProposalCards)
+                }
+                showProposalCards={showProposalCards}
+              />
 
-              {/* Proposal Cards */}
-              {proposalIds
-                .slice()
-                .reverse()
-                .map((id) => (
-                  <ProposalCard key={id.toString()} proposalId={id} />
-                ))}
-              {error && (
-                <div
-                  className="p-3 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: "#fee2e2",
-                    border: "1px solid #fca5a5",
-                    color: "#991b1b",
-                  }}
-                >
-                  <p className="font-semibold">Error al actualizar</p>
-                  <p>{error}</p>
+              {/* Proposal Cards - Only show if toggled */}
+              {showProposalCards && (
+                <div className="space-y-4">
+                  {proposalIds
+                    .slice()
+                    .reverse()
+                    .map((id) => (
+                      <ProposalCard key={id.toString()} proposalId={id} />
+                    ))}
+                  {error && (
+                    <div
+                      className="p-3 rounded-lg text-sm"
+                      style={{
+                        backgroundColor: "#fee2e2",
+                        border: "1px solid #fca5a5",
+                        color: "#991b1b",
+                      }}
+                    >
+                      <p className="font-semibold">Error al actualizar</p>
+                      <p>{error}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
