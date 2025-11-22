@@ -74,10 +74,21 @@ For compact UI components, see [ui-compact-design.mdc](mdc:.cursor/rules/ui-comp
 - Place related information inline when possible
 - Use collapsible sections for detailed information
 
+## Help Modals
+
+For adding help modals with enhanced blur effects, see [help-modal-pattern.mdc](mdc:.cursor/rules/help-modal-pattern.mdc):
+
+- Use 8px blur with 40% opacity for professional appearance
+- Place help button next to component title
+- Organize content in logical sections
+- Use theme-appropriate colors
+- Ensure modal is accessible and responsive
+
 ## Reference Components
 
-- [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) - Contract state handling example
+- [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) - Contract state handling and help modal
 - [ConnectWallet.tsx](mdc:web/components/ConnectWallet.tsx) - Wallet connection pattern
 - [VotingSummary.tsx](mdc:web/components/VotingSummary.tsx) - Compact summary with collapsible sections
 - [ProposalCard.tsx](mdc:web/components/ProposalCard.tsx) - Compact proposal display
-- [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Grid layout for form fields
+- [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Grid layout for form fields and help modal
+- [ProposalList.tsx](mdc:web/components/ProposalList.tsx) - Voting panel with help modal

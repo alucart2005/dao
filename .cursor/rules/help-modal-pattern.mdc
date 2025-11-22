@@ -1,0 +1,276 @@
+---
+globs: **/components/**/*.tsx
+description: Help modal pattern with enhanced blur background for improved UX
+---
+
+# Help Modal Pattern with Enhanced Blur
+
+## Overview
+
+This pattern provides a consistent way to add help modals to components with professional blur effects and comprehensive user guidance.
+
+## Modal Structure
+
+### Basic Setup
+
+```tsx
+import { useState } from "react";
+
+export function MyComponent() {
+  const [showHelp, setShowHelp] = useState(false);
+
+  return (
+    <div>
+      {/* Component content */}
+      
+      {/* Help Modal */}
+      {showHelp && (
+        <>
+          {/* Backdrop with enhanced blur */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowHelp(false)}
+            style={{
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
+          />
+
+          {/* Modal Window */}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowHelp(false)}
+          >
+            <div
+              className="relative w-full max-w-3xl max-h-[90vh] rounded-lg shadow-2xl border overflow-hidden flex flex-col"
+              style={{
+                backgroundColor: "var(--color-alabaster-grey-900)",
+                borderColor: "var(--color-[theme]-300)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header, Content, Footer */}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+## Help Button Pattern
+
+### Button Placement
+
+Place the help button next to the component title:
+
+```tsx
+<div className="flex items-center justify-between mb-4">
+  <h2 className="text-xl font-bold">Component Title</h2>
+  <button
+    onClick={() => setShowHelp(!showHelp)}
+    className="px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2"
+    style={{
+      backgroundColor: showHelp
+        ? "var(--color-[theme])"
+        : "var(--color-[theme]-900)",
+      color: showHelp ? "white" : "var(--color-[theme]-200)",
+    }}
+    onMouseEnter={(e) => {
+      if (!showHelp) {
+        e.currentTarget.style.backgroundColor = "var(--color-[theme]-800)";
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!showHelp) {
+        e.currentTarget.style.backgroundColor = "var(--color-[theme]-900)";
+      }
+    }}
+  >
+    <span>❓</span>
+    <span>{showHelp ? "Ocultar Ayuda" : "Ayuda"}</span>
+  </button>
+</div>
+```
+
+## Enhanced Blur Configuration
+
+### Backdrop Settings
+
+Use these exact settings for professional blur effect:
+
+```tsx
+style={{
+  backgroundColor: "rgba(0, 0, 0, 0.4)",  // 40% opacity for good contrast
+  backdropFilter: "blur(8px)",            // 8px blur for pronounced effect
+  WebkitBackdropFilter: "blur(8px)",      // Safari/Chrome compatibility
+}}
+```
+
+**Why 8px?**
+- More pronounced than default `backdrop-blur-sm` (~4px)
+- Professional appearance without being too heavy
+- Good balance between focus and readability
+
+**Why 40% opacity?**
+- Better contrast than 30%
+- Ensures modal content stands out
+- Maintains visibility of background context
+
+## Modal Header Pattern
+
+```tsx
+<div
+  className="flex items-center justify-between p-4 border-b"
+  style={{
+    backgroundColor: "var(--color-[theme]-900)",
+    borderColor: "var(--color-[theme]-300)",
+  }}
+>
+  <h3
+    className="text-xl font-bold flex items-center gap-2"
+    style={{ color: "var(--color-[theme]-200)" }}
+  >
+    <span>📚</span>
+    <span>Guía del [Component Name]</span>
+  </h3>
+  <button
+    onClick={() => setShowHelp(false)}
+    className="p-1.5 rounded transition-colors"
+    style={{
+      backgroundColor: "var(--color-[theme]-800)",
+      color: "var(--color-[theme]-200)",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = "var(--color-[theme]-700)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = "var(--color-[theme]-800)";
+    }}
+  >
+    <span className="text-lg">×</span>
+  </button>
+</div>
+```
+
+## Scrollable Content Pattern
+
+```tsx
+<div
+  className="flex-1 overflow-y-auto p-6"
+  style={{ backgroundColor: "var(--color-alabaster-grey-900)" }}
+>
+  <div
+    className="space-y-4 text-sm"
+    style={{ color: "var(--color-carbon-black-700)" }}
+  >
+    <section>
+      <h4
+        className="font-semibold mb-2"
+        style={{ color: "var(--color-carbon-black)" }}
+      >
+        Section Title
+      </h4>
+      <p className="mb-2">Content...</p>
+    </section>
+    {/* More sections */}
+  </div>
+</div>
+```
+
+## Footer Pattern
+
+```tsx
+<div
+  className="p-4 border-t flex justify-end"
+  style={{
+    backgroundColor: "var(--color-alabaster-grey-800)",
+    borderColor: "var(--color-carbon-black-300)",
+  }}
+>
+  <button
+    onClick={() => setShowHelp(false)}
+    className="px-4 py-2 rounded font-medium transition-colors"
+    style={{
+      backgroundColor: "var(--color-[theme])",
+      color: "white",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = "var(--color-[theme]-600)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = "var(--color-[theme])";
+    }}
+  >
+    Entendido
+  </button>
+</div>
+```
+
+## Content Organization
+
+### Recommended Sections
+
+1. **¿Qué es este [componente]?** - Overview and purpose
+2. **Main Features** - Key functionality explained
+3. **How to Use** - Step-by-step instructions
+4. **Requirements** - Prerequisites and limitations
+5. **Tips** - Best practices and helpful hints
+
+### Content Formatting
+
+```tsx
+<section>
+  <h4 className="font-semibold mb-2">Section Title</h4>
+  <ul className="list-disc list-inside space-y-1 ml-2">
+    <li><strong>Bold term:</strong> Explanation</li>
+  </ul>
+  <ol className="list-decimal list-inside space-y-1 ml-2">
+    <li>Step 1</li>
+    <li>Step 2</li>
+  </ol>
+</section>
+```
+
+## Theme Color Mapping
+
+Use appropriate theme colors based on component purpose:
+
+- **FundingPanel**: `seaweed` (green tones)
+- **CreateProposal**: `stormy-teal` (teal tones)
+- **ProposalList/VotingSummary**: `stormy-teal` (teal tones)
+
+## Z-Index Layers
+
+- **Backdrop**: `z-40`
+- **Modal**: `z-50`
+
+This ensures modal appears above all other content.
+
+## Accessibility
+
+- **Click outside to close**: Backdrop and modal container handle clicks
+- **Stop propagation**: Modal content prevents accidental closes
+- **Keyboard accessible**: Close button is clearly visible
+- **Scrollable content**: Long content doesn't break layout
+
+## Reference Implementations
+
+- [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) - Funding panel help modal
+- [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Proposal creation help modal
+- [ProposalList.tsx](mdc:web/components/ProposalList.tsx) - Voting panel help modal
+
+## Best Practices
+
+1. **Consistent styling**: Use the same blur and opacity across all modals
+2. **Theme colors**: Match modal colors to component theme
+3. **Clear content**: Organize information in logical sections
+4. **Actionable guidance**: Provide step-by-step instructions
+5. **Visual hierarchy**: Use headings, lists, and spacing effectively
+6. **Responsive design**: Modal works on all screen sizes (max-w-3xl, p-4)
