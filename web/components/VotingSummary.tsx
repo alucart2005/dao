@@ -7,6 +7,7 @@ import { getProposalStatus } from "@/lib/utils";
 
 interface VotingSummaryProps {
   proposalIds: bigint[];
+  isLoading?: boolean;
 }
 
 interface ProposalData {
@@ -56,7 +57,10 @@ function ProposalDataLoader({
   return null;
 }
 
-export function VotingSummary({ proposalIds }: VotingSummaryProps) {
+export function VotingSummary({
+  proposalIds,
+  isLoading = false,
+}: VotingSummaryProps) {
   const [proposalsData, setProposalsData] = useState<Map<bigint, ProposalData>>(
     new Map()
   );
@@ -171,12 +175,37 @@ export function VotingSummary({ proposalIds }: VotingSummaryProps) {
         className="p-6 rounded-lg shadow"
         style={{ backgroundColor: "var(--color-alabaster-grey)" }}
       >
-        <h3
-          className="text-xl font-bold mb-4"
-          style={{ color: "var(--color-carbon-black)" }}
+        <div className="flex items-center justify-between mb-4">
+          <h3
+            className="text-xl font-bold"
+            style={{ color: "var(--color-carbon-black)" }}
+          >
+            📊 Resumen de Votaciones
+          </h3>
+          {isLoading && (
+            <span
+              className="text-xs"
+              style={{ color: "var(--color-carbon-black-500)" }}
+            >
+              Actualizando...
+            </span>
+          )}
+        </div>
+
+        <div
+          className="mb-4 pb-4 border-b"
+          style={{ borderColor: "var(--color-carbon-black-300)" }}
         >
-          📊 Resumen de Votaciones
-        </h3>
+          <p
+            className="text-sm font-medium"
+            style={{ color: "var(--color-carbon-black-600)" }}
+          >
+            {proposalIds.length}{" "}
+            {proposalIds.length === 1
+              ? "propuesta disponible"
+              : "propuestas disponibles"}
+          </p>
+        </div>
 
         {/* Vote Totals */}
         <div className="mb-6">

@@ -332,28 +332,8 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              <div
-                className="flex items-center justify-between mb-4"
-                style={{ color: "var(--color-carbon-black-600)" }}
-              >
-                <p className="text-sm font-medium">
-                  {proposalIds.length}{" "}
-                  {proposalIds.length === 1
-                    ? "propuesta disponible"
-                    : "propuestas disponibles"}
-                </p>
-                {loading && (
-                  <span
-                    className="text-xs"
-                    style={{ color: "var(--color-carbon-black-500)" }}
-                  >
-                    Actualizando...
-                  </span>
-                )}
-              </div>
-
               {/* Voting Summary */}
-              <VotingSummary proposalIds={proposalIds} />
+              <VotingSummary proposalIds={proposalIds} isLoading={loading} />
 
               {/* Proposal Cards */}
               {proposalIds
