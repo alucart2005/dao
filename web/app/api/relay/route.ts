@@ -30,15 +30,72 @@ const walletClient = createWalletClient({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { request: forwardRequest, signature } = body;
-
-    if (!forwardRequest || !signature) {
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error("Error parsing JSON body:", parseError);
       return NextResponse.json(
-        { error: "Missing request or signature" },
+        { error: "Invalid JSON in request body" },
         { status: 400 }
       );
     }
+
+    // Debug logging
+    console.log("Received body:", JSON.stringify(body, null, 2));
+    console.log("Body keys:", Object.keys(body || {}));
+    console.log("Body type:", typeof body);
+
+    if (!body || typeof body !== "object") {
+      console.error("Body is not an object:", body);
+      return NextResponse.json(
+        { error: "Request body must be a JSON object" },
+        { status: 400 }
+      );
+    }
+
+    const forwardRequestRaw = body.request;
+    const signature = body.signature;
+
+    if (!forwardRequestRaw) {
+      console.error(
+        "Missing request in body. Body:",
+        JSON.stringify(body, null, 2)
+      );
+      return NextResponse.json(
+        {
+          error: "Missing 'request' field in body",
+          received: Object.keys(body),
+          bodyType: typeof body,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!signature) {
+      console.error(
+        "Missing signature in body. Body:",
+        JSON.stringify(body, null, 2)
+      );
+      return NextResponse.json(
+        {
+          error: "Missing 'signature' field in body",
+          received: Object.keys(body),
+          bodyType: typeof body,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Convert string values back to BigInt for viem
+    const forwardRequest = {
+      from: forwardRequestRaw.from as Address,
+      to: forwardRequestRaw.to as Address,
+      value: BigInt(forwardRequestRaw.value),
+      gas: BigInt(forwardRequestRaw.gas),
+      nonce: BigInt(forwardRequestRaw.nonce),
+      data: forwardRequestRaw.data as `0x${string}`,
+    };
 
     // Verify the signature first
     const forwarderAddress = process.env
