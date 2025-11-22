@@ -117,8 +117,12 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
         return;
       }
 
-      setLoading(true);
-      setError(null);
+      // Only set loading to true if we don't have existing proposals
+      // This prevents the list from disappearing during refresh
+      if (proposalIds.length === 0) {
+        setLoading(true);
+      }
+      // Don't clear error immediately - keep it until we have new data
       const found: bigint[] = [];
 
       try {
@@ -135,13 +139,21 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
             });
 
             // If proposal exists (id is not 0), add it
-            if (proposal && proposal.id !== 0n) {
+            // Handle both old and new contract versions
+            if (
+              proposal &&
+              (proposal as any).id !== undefined &&
+              (proposal as any).id !== 0n
+            ) {
               found.push(BigInt(i));
             } else {
               // If we get a proposal with id 0, it means no more proposals exist
               break;
             }
-          } catch (err) {
+          } catch (err: any) {
+            // Log error for debugging
+            const errorMessage = err?.message || String(err);
+
             // Check if it's a contract not deployed error
             if (isContractNotDeployedError(err)) {
               // If first call failed, contract might not be deployed
@@ -157,6 +169,23 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
               // Otherwise, likely no more proposals
               break;
             }
+
+            // Check for ABI decoding errors (contract version mismatch)
+            if (
+              errorMessage.includes("data out-of-bounds") ||
+              errorMessage.includes("insufficient data") ||
+              errorMessage.includes("AbiError") ||
+              errorMessage.includes("decode")
+            ) {
+              // Contract version mismatch - try to continue with next proposal
+              console.warn(
+                `Error decoding proposal ${i}, possible contract version mismatch:`,
+                errorMessage
+              );
+              // Continue to next proposal
+              continue;
+            }
+
             // For other errors, continue checking a few more in case of network issues
             if (i > 10) {
               break;
@@ -165,15 +194,28 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
         }
 
         if (!cancelled && isMountedRef.current) {
+          // Update proposals and clear loading/error only after successful fetch
           setProposalIds(found);
           setLoading(false);
+          setError(null); // Clear error only on success
         }
-      } catch (err) {
+      } catch (err: any) {
         if (!cancelled && isMountedRef.current) {
+          const errorMessage = err?.message || String(err);
+          console.error("Error in findProposals:", errorMessage);
+
           if (isContractNotDeployedError(err)) {
             setError("Contract not deployed");
+          } else if (
+            errorMessage.includes("data out-of-bounds") ||
+            errorMessage.includes("insufficient data") ||
+            errorMessage.includes("AbiError")
+          ) {
+            setError(
+              "Error de compatibilidad: El contrato desplegado no coincide con la versión esperada. Por favor, redespliega el contrato."
+            );
           } else {
-            setError("Failed to load proposals");
+            setError(`Failed to load proposals: ${errorMessage}`);
           }
           setLoading(false);
         }
@@ -250,11 +292,11 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
       {/* Contract deployed - show proposals */}
       {contractDeployed === true && (
         <>
-          {loading ? (
+          {loading && proposalIds.length === 0 ? (
             <div style={{ color: "var(--color-carbon-black-600)" }}>
               Cargando propuestas...
             </div>
-          ) : error ? (
+          ) : error && proposalIds.length === 0 ? (
             <div
               className="p-4 rounded-lg"
               style={{
@@ -267,17 +309,66 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
               <p className="text-sm">{error}</p>
             </div>
           ) : proposalIds.length === 0 ? (
-            <div style={{ color: "var(--color-carbon-black-600)" }}>
-              No hay propuestas disponibles
+            <div
+              className="p-6 rounded-lg text-center"
+              style={{
+                backgroundColor: "var(--color-alabaster-grey)",
+                border: "1px dashed var(--color-carbon-black-300)",
+              }}
+            >
+              <p
+                className="text-lg font-medium mb-2"
+                style={{ color: "var(--color-carbon-black-600)" }}
+              >
+                No hay propuestas disponibles
+              </p>
+              <p
+                className="text-sm"
+                style={{ color: "var(--color-carbon-black-500)" }}
+              >
+                Crea tu primera propuesta usando el formulario de arriba
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
+              <div
+                className="flex items-center justify-between mb-4"
+                style={{ color: "var(--color-carbon-black-600)" }}
+              >
+                <p className="text-sm font-medium">
+                  {proposalIds.length}{" "}
+                  {proposalIds.length === 1
+                    ? "propuesta disponible"
+                    : "propuestas disponibles"}
+                </p>
+                {loading && (
+                  <span
+                    className="text-xs"
+                    style={{ color: "var(--color-carbon-black-500)" }}
+                  >
+                    Actualizando...
+                  </span>
+                )}
+              </div>
               {proposalIds
                 .slice()
                 .reverse()
                 .map((id) => (
                   <ProposalCard key={id.toString()} proposalId={id} />
                 ))}
+              {error && (
+                <div
+                  className="p-3 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: "#fee2e2",
+                    border: "1px solid #fca5a5",
+                    color: "#991b1b",
+                  }}
+                >
+                  <p className="font-semibold">Error al actualizar</p>
+                  <p>{error}</p>
+                </div>
+              )}
             </div>
           )}
         </>

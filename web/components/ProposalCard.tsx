@@ -44,6 +44,24 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
     );
   }
 
+  // Handle errors gracefully
+  if (error) {
+    console.error("Error loading proposal:", error);
+    return (
+      <div
+        className="p-6 rounded-lg shadow"
+        style={{ backgroundColor: "var(--color-alabaster-grey)" }}
+      >
+        <div
+          className="text-sm"
+          style={{ color: "var(--color-carbon-black-600)" }}
+        >
+          Error al cargar propuesta #{proposalId.toString()}
+        </div>
+      </div>
+    );
+  }
+
   // Don't render if proposal doesn't exist or has id 0
   if (!proposal || proposal.id === 0n) {
     return null;
@@ -91,12 +109,20 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
       style={{ backgroundColor: "var(--color-alabaster-grey)" }}
     >
       <div className="flex justify-between items-start mb-4">
-        <h3
-          className="text-lg font-bold"
-          style={{ color: "var(--color-carbon-black)" }}
-        >
-          Propuesta #{proposal.id.toString()}
-        </h3>
+        <div>
+          <h3
+            className="text-lg font-bold"
+            style={{ color: "var(--color-carbon-black)" }}
+          >
+            {(proposal as any).name || `Propuesta #${proposal.id.toString()}`}
+          </h3>
+          <p
+            className="text-xs mt-1"
+            style={{ color: "var(--color-carbon-black-600)" }}
+          >
+            Propuesta #{proposal.id.toString()}
+          </p>
+        </div>
         <span
           className="px-3 py-1 rounded text-sm font-semibold"
           style={{ backgroundColor: statusColors.bg, color: statusColors.text }}

@@ -20,6 +20,7 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
   const { createProposal, isPending, isSuccess, error, hash } =
     useCreateProposal();
 
+  const [name, setName] = useState("");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [deadline, setDeadline] = useState("");
@@ -31,6 +32,10 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
   const canCreateProposal = balanceWei >= minThreshold;
 
   const handleCreate = async () => {
+    if (!name || name.trim().length === 0) {
+      alert("Please enter a proposal name");
+      return;
+    }
     if (!isAddress(recipient)) {
       alert("Invalid recipient address");
       return;
@@ -47,7 +52,13 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
       return;
     }
 
-    createProposal(recipient as `0x${string}`, amount, deadlineTimestamp);
+    createProposal(
+      name.trim(),
+      recipient as `0x${string}`,
+      amount,
+      deadlineTimestamp
+    );
+    setName("");
     setRecipient("");
     setAmount("");
     setDeadline("");
@@ -125,6 +136,29 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
             className="block text-sm font-medium mb-2"
             style={{ color: "var(--color-carbon-black-700)" }}
           >
+            Nombre de la propuesta
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ej: Mejora de infraestructura"
+            className="w-full px-4 py-2 rounded disabled:opacity-50"
+            style={{
+              borderColor: "var(--color-carbon-black-300)",
+              borderWidth: "1px",
+              backgroundColor: "white",
+              color: "var(--color-carbon-black)",
+            }}
+            disabled={isPending || !canCreateProposal}
+          />
+        </div>
+
+        <div>
+          <label
+            className="block text-sm font-medium mb-2"
+            style={{ color: "var(--color-carbon-black-700)" }}
+          >
             Dirección del beneficiario
           </label>
           <input
@@ -194,6 +228,7 @@ export function CreateProposal({ onProposalCreated }: CreateProposalProps) {
           disabled={
             isPending ||
             !canCreateProposal ||
+            !name ||
             !recipient ||
             !amount ||
             !deadline

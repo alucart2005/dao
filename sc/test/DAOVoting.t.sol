@@ -68,6 +68,7 @@ contract DAOVotingTest is Test {
 
     event ProposalCreated(
         uint256 indexed proposalId,
+        string name,
         address indexed proposer,
         address indexed recipient,
         uint256 amount,
@@ -127,10 +128,11 @@ contract DAOVotingTest is Test {
         uint256 deadline = block.timestamp + 7 days;
         
         vm.prank(alice);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
         
         DAOVoting.Proposal memory proposal = dao.getProposal(1);
         assertEq(proposal.id, 1);
+        assertEq(proposal.name, "Test Proposal");
         assertEq(proposal.proposer, alice);
         assertEq(proposal.recipient, recipient);
         assertEq(proposal.amount, PROPOSAL_AMOUNT);
@@ -152,7 +154,7 @@ contract DAOVotingTest is Test {
         
         vm.prank(smallHolder);
         vm.expectRevert("DAOVoting: insufficient balance to create proposal");
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
     }
 
     function test_CreateProposal_RequiresValidRecipient() public {
@@ -160,7 +162,7 @@ contract DAOVotingTest is Test {
         
         vm.prank(alice);
         vm.expectRevert("DAOVoting: invalid recipient");
-        dao.createProposal(address(0), PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", address(0), PROPOSAL_AMOUNT, deadline);
     }
 
     function test_CreateProposal_RequiresPositiveAmount() public {
@@ -168,13 +170,21 @@ contract DAOVotingTest is Test {
         
         vm.prank(alice);
         vm.expectRevert("DAOVoting: amount must be greater than 0");
-        dao.createProposal(recipient, 0, deadline);
+        dao.createProposal("Test Proposal", recipient, 0, deadline);
     }
 
     function test_CreateProposal_RequiresFutureDeadline() public {
         vm.prank(alice);
         vm.expectRevert("DAOVoting: deadline must be in the future");
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, block.timestamp - 1);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, block.timestamp - 1);
+    }
+
+    function test_CreateProposal_RequiresNonEmptyName() public {
+        uint256 deadline = block.timestamp + 7 days;
+        
+        vm.prank(alice);
+        vm.expectRevert("DAOVoting: name cannot be empty");
+        dao.createProposal("", recipient, PROPOSAL_AMOUNT, deadline);
     }
 
     function test_CreateProposal_RequiresSufficientDAOBalance() public {
@@ -183,7 +193,7 @@ contract DAOVotingTest is Test {
         
         vm.prank(alice);
         vm.expectRevert("DAOVoting: insufficient DAO balance");
-        dao.createProposal(recipient, excessiveAmount, deadline);
+        dao.createProposal("Test Proposal", recipient, excessiveAmount, deadline);
     }
 
     function test_CreateProposal_EmitsEvent() public {
@@ -191,21 +201,21 @@ contract DAOVotingTest is Test {
         
         vm.prank(alice);
         vm.expectEmit(true, true, true, true);
-        emit ProposalCreated(1, alice, recipient, PROPOSAL_AMOUNT, deadline);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        emit ProposalCreated(1, "Test Proposal", alice, recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
     }
 
     function test_CreateProposal_SequentialIds() public {
         uint256 deadline = block.timestamp + 7 days;
         
         vm.prank(alice);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal 1", recipient, PROPOSAL_AMOUNT, deadline);
         
         vm.prank(alice);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal 2", recipient, PROPOSAL_AMOUNT, deadline);
         
         vm.prank(alice);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal 3", recipient, PROPOSAL_AMOUNT, deadline);
         
         assertEq(dao.getProposal(1).id, 1);
         assertEq(dao.getProposal(2).id, 2);
@@ -439,6 +449,7 @@ contract DAOVotingTest is Test {
         
         bytes memory data = abi.encodeWithSelector(
             DAOVoting.createProposal.selector,
+            "Gasless Proposal",
             recipient,
             PROPOSAL_AMOUNT,
             deadline
@@ -460,6 +471,7 @@ contract DAOVotingTest is Test {
         forwarder.execute(req, signature);
         
         DAOVoting.Proposal memory proposal = dao.getProposal(1);
+        assertEq(proposal.name, "Gasless Proposal");
         assertEq(proposal.proposer, alice);
         assertEq(proposal.recipient, recipient);
     }
@@ -609,18 +621,18 @@ contract DAOVotingTest is Test {
         uint256 deadline = block.timestamp + 7 days;
         
         vm.prank(alice);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
         
         // Bob has 50 ETH, total is 160 ETH
         // 50 / 160 = 31.25% > 10% ✓
         vm.prank(bob);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
         
         // Charlie has 10 ETH, total is 160 ETH
         // 10 / 160 = 6.25% < 10% ✗
         vm.prank(charlie);
         vm.expectRevert("DAOVoting: insufficient balance to create proposal");
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
     }
 
     function test_Vote_WeightedByBalance() public {
@@ -675,7 +687,7 @@ contract DAOVotingTest is Test {
     function _createProposal() internal returns (uint256) {
         uint256 deadline = block.timestamp + 7 days;
         vm.prank(alice);
-        dao.createProposal(recipient, PROPOSAL_AMOUNT, deadline);
+        dao.createProposal("Test Proposal", recipient, PROPOSAL_AMOUNT, deadline);
         return 1;
     }
 }

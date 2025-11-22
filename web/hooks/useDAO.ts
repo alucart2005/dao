@@ -209,6 +209,7 @@ export function useCreateProposal() {
   });
 
   const createProposal = (
+    name: string,
     recipient: `0x${string}`,
     amount: string,
     deadline: bigint
@@ -217,7 +218,7 @@ export function useCreateProposal() {
       address: CONTRACTS.DAO_VOTING,
       abi: DAO_VOTING_ABI,
       functionName: "createProposal",
-      args: [recipient, parseEther(amount), deadline],
+      args: [name, recipient, parseEther(amount), deadline],
     });
   };
 

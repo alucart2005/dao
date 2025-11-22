@@ -45,6 +45,11 @@ export const DAO_VOTING_ABI = [
     name: "createProposal",
     inputs: [
       {
+        name: "name",
+        type: "string",
+        internalType: "string",
+      },
+      {
         name: "recipient",
         type: "address",
         internalType: "address",
@@ -103,6 +108,11 @@ export const DAO_VOTING_ABI = [
             name: "id",
             type: "uint256",
             internalType: "uint256",
+          },
+          {
+            name: "name",
+            type: "string",
+            internalType: "string",
           },
           {
             name: "proposer",

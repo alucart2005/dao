@@ -17,6 +17,7 @@ contract DAOVoting is ERC2771Context {
 
     struct Proposal {
         uint256 id;
+        string name;
         address proposer;
         address recipient;
         uint256 amount;
@@ -41,6 +42,7 @@ contract DAOVoting is ERC2771Context {
 
     event ProposalCreated(
         uint256 indexed proposalId,
+        string name,
         address indexed proposer,
         address indexed recipient,
         uint256 amount,
@@ -97,11 +99,13 @@ contract DAOVoting is ERC2771Context {
 
     /**
      * @dev Create a new proposal
+     * @param name The name/title of the proposal
      * @param recipient The address that will receive the funds if proposal passes
      * @param amount The amount of ETH to transfer
      * @param deadline The timestamp when voting ends
      */
     function createProposal(
+        string memory name,
         address recipient,
         uint256 amount,
         uint256 deadline
@@ -115,6 +119,7 @@ contract DAOVoting is ERC2771Context {
             "DAOVoting: insufficient balance to create proposal"
         );
 
+        require(bytes(name).length > 0, "DAOVoting: name cannot be empty");
         require(recipient != address(0), "DAOVoting: invalid recipient");
         require(amount > 0, "DAOVoting: amount must be greater than 0");
         require(deadline > block.timestamp, "DAOVoting: deadline must be in the future");
@@ -123,6 +128,7 @@ contract DAOVoting is ERC2771Context {
         uint256 proposalId = _nextProposalId++;
         proposals[proposalId] = Proposal({
             id: proposalId,
+            name: name,
             proposer: proposer,
             recipient: recipient,
             amount: amount,
@@ -134,7 +140,7 @@ contract DAOVoting is ERC2771Context {
             executionTime: 0
         });
 
-        emit ProposalCreated(proposalId, proposer, recipient, amount, deadline);
+        emit ProposalCreated(proposalId, name, proposer, recipient, amount, deadline);
     }
 
     /**
