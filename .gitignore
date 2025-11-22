@@ -17,6 +17,9 @@ forge-cache/
 
 # Cursor
 .cursor/
+# Allow Cursor rules to be committed
+!.cursor/rules/
+!.cursor/rules/*.mdc
 
 # Environment variables
 .env

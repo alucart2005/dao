@@ -1,0 +1,139 @@
+---
+globs: **/api/**/*.ts,**/hooks/**/*.ts,**/hooks/**/*.tsx
+description: BigInt serialization patterns for JSON and API communication
+---
+
+# BigInt Serialization Patterns
+
+## Problem
+
+JavaScript's `JSON.stringify()` cannot serialize BigInt values. This causes errors when sending BigInt values in API requests or storing them in JSON.
+
+## Solution Pattern
+
+### Client Side (Hooks/Components)
+
+When sending BigInt values to API routes, convert them to strings:
+
+```typescript
+import { formatEther } from "viem";
+
+// For display
+const displayValue = formatEther(bigIntValue); // "1.5" ETH
+
+// For JSON serialization
+const serializableData = {
+  value: bigIntValue.toString(), // Convert BigInt to string
+  gas: gasAmount.toString(),
+  nonce: nonceValue.toString(),
+};
+
+const response = await fetch("/api/endpoint", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(serializableData), // Now works!
+});
+```
+
+### API Route Side
+
+Convert strings back to BigInt when receiving from client:
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+
+  // Convert string values back to BigInt
+  const requestData = {
+    value: BigInt(body.value), // "1000000000000000000" -> 1000000000000000000n
+    gas: BigInt(body.gas),
+    nonce: BigInt(body.nonce),
+  };
+
+  // Use with viem functions
+  const result = await publicClient.readContract({
+    // ... uses BigInt values
+  });
+}
+```
+
+## Common Use Cases
+
+### 1. Meta-Transaction Forward Requests
+
+See [useGaslessVote.ts](mdc:web/hooks/useGaslessVote.ts) and [relay/route.ts](mdc:web/app/api/relay/route.ts):
+
+```typescript
+// Client: Convert BigInt to strings
+const serializableRequest = {
+  from: forwardRequest.from,
+  to: forwardRequest.to,
+  value: forwardRequest.value.toString(),
+  gas: forwardRequest.gas.toString(),
+  nonce: forwardRequest.nonce.toString(),
+  data: forwardRequest.data,
+};
+
+// API: Convert strings back to BigInt
+const forwardRequest = {
+  from: forwardRequestRaw.from as Address,
+  to: forwardRequestRaw.to as Address,
+  value: BigInt(forwardRequestRaw.value),
+  gas: BigInt(forwardRequestRaw.gas),
+  nonce: BigInt(forwardRequestRaw.nonce),
+  data: forwardRequestRaw.data as `0x${string}`,
+};
+```
+
+### 2. Display Values
+
+Always use `formatEther()` for displaying ETH values to users:
+
+```typescript
+import { formatEther } from "viem";
+
+// ❌ Bad: Shows wei value
+<p>Balance: {balanceWei.toString()} wei</p>
+
+// ✅ Good: Shows ETH value
+<p>Balance: {formatEther(balanceWei)} ETH</p>
+```
+
+### 3. Error Messages
+
+Show user-friendly ETH values in error messages:
+
+```typescript
+// ❌ Bad
+<p>Tu balance: {balanceWei.toString()} wei, Mínimo requerido: {minThreshold.toString()} wei</p>
+
+// ✅ Good
+<p>Tu balance: {formatEther(balanceWei)} ETH, Mínimo requerido: {formatEther(minThreshold)} ETH</p>
+```
+
+## Best Practices
+
+1. **Always convert BigInt to string** before `JSON.stringify()`
+2. **Always convert string back to BigInt** in API routes before using with viem
+3. **Always use `formatEther()`** for displaying ETH values to users
+4. **Never show wei values** to end users (use ETH instead)
+5. **Validate BigInt conversion** - handle cases where string might be invalid
+
+## Error Handling
+
+```typescript
+try {
+  const value = BigInt(stringValue);
+} catch (error) {
+  // Handle invalid BigInt string
+  throw new Error("Invalid BigInt value");
+}
+```
+
+## Reference Files
+
+- [useGaslessVote.ts](mdc:web/hooks/useGaslessVote.ts) - Client-side BigInt serialization
+- [relay/route.ts](mdc:web/app/api/relay/route.ts) - API-side BigInt deserialization
+- [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Display ETH values

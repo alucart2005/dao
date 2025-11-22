@@ -1,0 +1,94 @@
+---
+alwaysApply: true
+description: Project structure and architecture overview
+---
+
+# DAO Voting System - Project Structure
+
+This is a blockchain/Web3 project consisting of smart contracts (Foundry) and a Next.js web frontend.
+
+## Directory Structure
+
+- **`sc/`** - Smart contracts directory (Foundry project)
+
+  - `src/` - Solidity source files
+    - [DAOVoting.sol](mdc:sc/src/DAOVoting.sol) - Main DAO voting contract
+    - [MinimalForwarder.sol](mdc:sc/src/MinimalForwarder.sol) - Meta-transaction forwarder
+  - `script/` - Deployment scripts
+    - [DeployLocal.s.sol](mdc:sc/script/DeployLocal.s.sol) - Local deployment script
+    - [DeployTestnet.s.sol](mdc:sc/script/DeployTestnet.s.sol) - Testnet deployment script
+  - `test/` - Solidity test files
+  - `broadcast/` - Deployment transaction logs (used by sync script)
+  - `out/` - Compiled contract artifacts
+
+- **`web/`** - Next.js web frontend
+  - `app/` - Next.js App Router
+    - `api/` - API routes
+      - `relay/` - Meta-transaction relay endpoint
+      - `nonce/` - Nonce management for meta-transactions
+      - `daemon/` - Automatic proposal execution daemon
+      - `sync-contracts/` - Contract address synchronization API
+    - `page.tsx` - Home page
+    - `layout.tsx` - Root layout with providers
+  - `components/` - React components
+    - [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) - DAO funding interface
+    - [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Proposal creation
+    - [ProposalList.tsx](mdc:web/components/ProposalList.tsx) - Proposal listing
+    - [VoteButtons.tsx](mdc:web/components/VoteButtons.tsx) - Voting interface
+    - [ConnectWallet.tsx](mdc:web/components/ConnectWallet.tsx) - Wallet connection
+  - `hooks/` - Custom React hooks
+    - [useDAO.ts](mdc:web/hooks/useDAO.ts) - DAO interaction hooks
+    - [useGaslessVote.ts](mdc:web/hooks/useGaslessVote.ts) - Gasless voting hook
+  - `lib/config/` - Configuration
+    - [chain.ts](mdc:web/lib/config/chain.ts) - Wagmi chain configuration
+    - [contracts.ts](mdc:web/lib/config/contracts.ts) - Contract ABIs and addresses
+  - `lib/utils/` - Utility functions
+    - [eip712.ts](mdc:web/lib/utils/eip712.ts) - EIP-712 typed data utilities
+  - `scripts/` - Utility scripts
+    - [sync-contracts.js](mdc:web/scripts/sync-contracts.js) - Auto-sync contract addresses
+
+## Key Technologies
+
+- **Smart Contracts**: Solidity ^0.8.13, Foundry, OpenZeppelin Contracts
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Web3**: Wagmi v2, viem, Meta-transactions (EIP-712), ERC2771
+- **Testing**: Foundry for contracts, React Testing Library for frontend
+
+## Important Files
+
+- [web/.env.local](mdc:web/.env.local) - Environment variables (contract addresses, RPC URL, relayer config)
+- [web/package.json](mdc:web/package.json) - Frontend dependencies and scripts
+- [sc/foundry.toml](mdc:sc/foundry.toml) - Foundry configuration
+- [sc/deployment.log](mdc:sc/deployment.log) - Deployment transaction logs
+
+## Development Workflow
+
+1. **Start Anvil**: `cd sc && anvil` (keep running in separate terminal)
+2. **Deploy contracts**: `cd sc && forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://localhost:8545 --broadcast`
+3. **Auto-sync addresses**: Contract addresses are automatically synced via `predev` script hook in [package.json](mdc:web/package.json)
+4. **Run web frontend**: `cd web && npm run dev`
+
+## Contract Address Synchronization
+
+Contract addresses are automatically synchronized from Foundry broadcast files to `web/.env.local`:
+
+- Runs automatically before `npm run dev` and `npm run build` (via `predev`/`prebuild` hooks)
+- Can be triggered manually: `npm run sync-contracts`
+- See [contract-sync.mdc](mdc:.cursor/rules/contract-sync.mdc) for details
+
+## Environment Variables
+
+Required in `web/.env.local`:
+
+- `NEXT_PUBLIC_DAO_ADDRESS` - DAOVoting contract address
+- `NEXT_PUBLIC_FORWARDER_ADDRESS` - MinimalForwarder contract address
+- `NEXT_PUBLIC_CHAIN_ID` - Chain ID (31337 for Anvil)
+- `NEXT_PUBLIC_RPC_URL` - RPC endpoint (http://127.0.0.1:8545 for Anvil)
+- `RELAYER_PRIVATE_KEY` - Relayer private key (server-side only)
+- `RELAYER_ADDRESS` - Relayer address (server-side only)
+
+## Common Issues
+
+- **Contract not deployed**: Anvil was restarted, redeploy contracts
+- **Address mismatch**: Run `npm run sync-contracts` to update `.env.local`
+- **Errors in console**: Check if contracts are deployed and addresses are correct

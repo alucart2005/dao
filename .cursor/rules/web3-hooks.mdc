@@ -1,0 +1,63 @@
+---
+globs: **/hooks/**/*.ts,**/hooks/**/*.tsx
+description: Web3 hooks patterns and best practices
+---
+
+# Web3 Hooks Best Practices
+
+## Error Handling
+
+Always handle contract deployment errors gracefully:
+
+```typescript
+// Helper to detect contract not deployed errors
+function isContractNotDeployedError(error: unknown): boolean {
+  if (!error) return false;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return (
+    errorMessage.includes("returned no data") ||
+    errorMessage.includes("0x") ||
+    errorMessage.includes("contract does not have the function") ||
+    errorMessage.includes("address is not a contract")
+  );
+}
+```
+
+## Query Configuration
+
+When using `useReadContract`, configure retry and refetch behavior:
+
+```typescript
+query: {
+  enabled: !!address && CONTRACTS.DAO_VOTING !== "0x0",
+  refetchInterval: (query) => {
+    // Disable auto-refetch if contract not deployed
+    if (query.state.error && isContractNotDeployedError(query.state.error)) {
+      return false;
+    }
+    return 10000; // Auto-refetch every 10 seconds
+  },
+  retry: (failureCount, error) => {
+    // Don't retry if contract not deployed
+    if (isContractNotDeployedError(error)) {
+      return false;
+    }
+    return failureCount < 3;
+  },
+}
+```
+
+## Logging
+
+- Use `console.warn` for contract not deployed errors (user-friendly)
+- Use `console.error` for unexpected errors
+- Implement a flag to prevent repeated logging of the same error
+
+## Reference Implementation
+
+See [useDAO.ts](mdc:web/hooks/useDAO.ts) for complete examples of:
+
+- User balance reading
+- Total balance reading
+- Contract interaction hooks
+- Error handling patterns

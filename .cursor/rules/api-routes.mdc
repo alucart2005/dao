@@ -1,0 +1,105 @@
+---
+globs: **/app/api/**/*.ts
+description: Next.js API routes patterns and conventions
+---
+
+# Next.js API Routes - Web3 Patterns
+
+## Route Structure
+
+API routes follow Next.js 13+ App Router conventions:
+
+- Files: `app/api/[route]/route.ts`
+- Export named functions: `GET`, `POST`, `PUT`, `DELETE`, etc.
+- Use `NextRequest` and `NextResponse` from `next/server`
+
+## Meta-Transaction Relay
+
+The relay API ([app/api/relay/route.ts](mdc:web/app/api/relay/route.ts)) handles gasless transactions:
+
+```typescript
+export async function POST(request: NextRequest) {
+  // 1. Parse request body (forwardRequest + signature)
+  // 2. Verify signature using MinimalForwarder contract
+  // 3. Execute meta-transaction via walletClient
+  // 4. Return transaction hash
+}
+```
+
+**Security**:
+
+- Always verify signatures before forwarding
+- Use `RELAYER_PRIVATE_KEY` from environment (never expose)
+- Validate forward request structure
+- Check nonce to prevent replay attacks
+
+## Contract Synchronization API
+
+The sync API ([app/api/sync-contracts/route.ts](mdc:web/app/api/sync-contracts/route.ts)) allows manual contract address synchronization:
+
+```typescript
+// GET /api/sync-contracts?force=true&verbose=true
+// POST /api/sync-contracts with { force: true, verbose: true }
+```
+
+**Implementation**:
+
+- Executes [sync-contracts.js](mdc:web/scripts/sync-contracts.js) script
+- Returns JSON with success status and output
+- Handles errors gracefully
+
+## Nonce Management
+
+The nonce API provides current nonce for meta-transactions:
+
+- Endpoint: `/api/nonce?address=<address>&forwarder=<forwarder>`
+- Returns current nonce from MinimalForwarder contract
+- Required before creating forward requests
+
+## Daemon Service
+
+The daemon API ([app/api/daemon/route.ts](mdc:web/app/api/daemon/route.ts)) executes eligible proposals:
+
+- Checks proposals past deadline + execution delay
+- Executes proposals where `votesFor > votesAgainst`
+- Can be triggered manually or via cron job
+
+## Error Handling
+
+Always return proper HTTP status codes:
+
+- `200` - Success
+- `400` - Bad request (invalid parameters)
+- `500` - Server error
+
+```typescript
+try {
+  // Process request
+  return NextResponse.json({ success: true, data });
+} catch (error) {
+  console.error("API error:", error);
+  return NextResponse.json(
+    {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    },
+    { status: 500 }
+  );
+}
+```
+
+## Environment Variables
+
+Server-side only (not prefixed with `NEXT_PUBLIC_`):
+
+- `RELAYER_PRIVATE_KEY` - Private key for relayer account
+- `RELAYER_ADDRESS` - Address of relayer account
+
+## Best Practices
+
+- Validate all inputs
+- Use TypeScript types for request/response
+- Log errors for debugging
+- Return consistent response format
+- Handle async operations with try-catch
+- Never expose private keys or sensitive data

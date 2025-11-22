@@ -1,0 +1,117 @@
+---
+globs: **/components/**/*.tsx
+description: Compact UI design patterns and component layout guidelines
+---
+
+# Compact UI Design Patterns
+
+## General Principles
+
+1. **Reduce padding**: Use `p-4` or `p-3` instead of `p-6` for compact components
+2. **Smaller fonts**: Use `text-xs` or `text-sm` for secondary information, `text-[10px]` for labels
+3. **Tighter spacing**: Use `gap-2` instead of `gap-4`, `mb-3` instead of `mb-6`
+4. **Grid layouts**: Use responsive grids to maximize space efficiency
+5. **Inline elements**: Place related information on the same line when possible
+
+## Component Layout Patterns
+
+### Compact Cards
+
+```tsx
+// Compact card with reduced padding
+<div className="p-4 rounded-lg shadow">
+  <div className="flex items-center justify-between mb-3">
+    <h3 className="text-base font-bold">Title</h3>
+    <span className="px-2 py-0.5 rounded text-xs">Badge</span>
+  </div>
+  {/* Content */}
+</div>
+```
+
+### Grid Layouts for Forms
+
+```tsx
+// Two-column grid for related fields
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <label className="block text-sm font-medium mb-2">Field 1</label>
+    <input className="w-full px-4 py-2 rounded" />
+  </div>
+  <div>
+    <label className="block text-sm font-medium mb-2">Field 2</label>
+    <input className="w-full px-4 py-2 rounded" />
+  </div>
+</div>
+```
+
+### Compact Statistics Display
+
+```tsx
+// Compact stats with smaller fonts
+<div className="grid grid-cols-3 gap-2">
+  <div className="p-2.5 rounded">
+    <div className="text-[10px] mb-0.5 font-medium">LABEL</div>
+    <div className="text-lg font-bold leading-tight">Value</div>
+    <div className="text-[10px] mt-0.5">Percentage</div>
+  </div>
+</div>
+```
+
+### Inline Status and Actions
+
+```tsx
+// Status badge and action button on same line
+<div className="flex items-center justify-between mb-3">
+  <div className="flex items-center gap-2">
+    <h3 className="text-lg font-bold">Title</h3>
+    <span className="text-xs px-2 py-0.5 rounded">Status</span>
+  </div>
+  <button className="px-2.5 py-1 rounded text-xs">Action</button>
+</div>
+```
+
+## Voting Summary Component Pattern
+
+See [VotingSummary.tsx](mdc:web/components/VotingSummary.tsx) for reference:
+
+- **Collapsible sections**: Use toggle buttons to show/hide detailed information
+- **Compact proposal cards**: Show essential info with minimal padding
+- **Grid layouts**: Use `grid-cols-3` or `grid-cols-4` for statistics
+- **Small progress bars**: Use `h-2.5` or `h-1.5` for compact progress indicators
+
+## Proposal Card Pattern
+
+See [ProposalCard.tsx](mdc:web/components/ProposalCard.tsx) for reference:
+
+- **Remove redundant info**: Don't show proposal number if name is available
+- **Inline status**: Place status badge next to title
+- **Grid for details**: Use 2-column grid for proposal information
+- **Compact vote display**: Smaller fonts and padding for vote statistics
+
+## Button Placement
+
+```tsx
+// Place related information next to buttons
+<div className="flex gap-2 items-center">
+  <button>Action</button>
+  {status && <div className="text-sm ml-2">Status: {status}</div>}
+</div>
+```
+
+## Responsive Considerations
+
+- **Mobile**: Stack elements vertically (`grid-cols-1`)
+- **Desktop**: Use multi-column layouts (`md:grid-cols-2`, `md:grid-cols-4`)
+- **Always test**: Ensure compact design remains readable on all screen sizes
+
+## Color and Styling
+
+- Use CSS variables from [globals.css](mdc:web/app/globals.css)
+- Maintain color consistency across compact components
+- Use subtle borders and backgrounds for separation
+
+## Reference Components
+
+- [VotingSummary.tsx](mdc:web/components/VotingSummary.tsx) - Compact summary with collapsible sections
+- [ProposalCard.tsx](mdc:web/components/ProposalCard.tsx) - Compact proposal display
+- [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Grid layout for form fields

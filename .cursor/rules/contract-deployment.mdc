@@ -1,0 +1,62 @@
+---
+description: Smart contract deployment workflow and best practices
+---
+
+# Smart Contract Deployment
+
+## Local Development (Anvil)
+
+### Prerequisites
+
+1. Anvil must be running: `cd sc && anvil`
+2. Set PRIVATE_KEY environment variable (use Anvil's default accounts)
+
+### Deployment Steps
+
+```bash
+cd sc
+export PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+forge script script/DeployLocal.s.sol:DeployLocal \
+  --rpc-url http://localhost:8545 \
+  --broadcast \
+  -vvvv
+```
+
+### Important Notes
+
+- **Anvil state is ephemeral**: Restarting Anvil loses all deployed contracts
+- **Addresses change**: Each deployment may have different addresses
+- **Auto-sync**: Contract addresses are automatically synced to `web/.env.local` via [sync-contracts.js](mdc:web/scripts/sync-contracts.js)
+
+## Deployment Script
+
+The [DeployLocal.s.sol](mdc:sc/script/DeployLocal.s.sol) script:
+
+1. Deploys MinimalForwarder first
+2. Deploys DAOVoting with forwarder address
+3. Logs deployment addresses to console and broadcast files
+
+## Broadcast Files
+
+Deployment transactions are saved to:
+
+- `sc/broadcast/DeployLocal.s.sol/{CHAIN_ID}/run-*.json`
+- These files are used by the sync script to extract contract addresses
+
+## Verification
+
+After deployment, verify contracts exist:
+
+```bash
+# Check if contract has code
+cast code 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 --rpc-url http://localhost:8545
+
+# Call a view function
+cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "totalBalance()" --rpc-url http://localhost:8545
+```
+
+## Troubleshooting
+
+- **"Contract code is empty"**: Anvil was restarted, redeploy contracts
+- **"No broadcast files"**: Run deployment with `--broadcast` flag
+- **Address mismatch**: Run `npm run sync-contracts` to update `.env.local`

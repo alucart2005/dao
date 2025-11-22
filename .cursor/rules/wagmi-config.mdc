@@ -1,0 +1,66 @@
+---
+globs: **/lib/config/**/*.ts,**/lib/providers.tsx
+description: Wagmi and viem configuration patterns
+---
+
+# Wagmi Configuration
+
+## Chain Configuration
+
+Local Anvil chain is configured in [chain.ts](mdc:web/lib/config/chain.ts):
+
+```typescript
+export const localChain = defineChain({
+  id: Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 31337,
+  name: "Local Anvil",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8545"],
+    },
+  },
+});
+```
+
+## Contract Configuration
+
+Contract addresses and ABIs are in [contracts.ts](mdc:web/lib/config/contracts.ts):
+
+```typescript
+export const CONTRACTS = {
+  DAO_VOTING: (process.env.NEXT_PUBLIC_DAO_ADDRESS || "0x0") as `0x${string}`,
+  MINIMAL_FORWARDER: (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS ||
+    "0x0") as `0x${string}`,
+} as const;
+```
+
+## Provider Setup
+
+Wagmi config is created in [providers.tsx](mdc:web/lib/providers.tsx):
+
+```typescript
+const config = createConfig({
+  chains: [localChain],
+  connectors: [injected()],
+  transports: {
+    [chains[0].id]: http(
+      process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8545"
+    ),
+  },
+});
+```
+
+## Environment Variables
+
+Required in `web/.env.local`:
+
+- `NEXT_PUBLIC_DAO_ADDRESS` - DAOVoting contract address
+- `NEXT_PUBLIC_FORWARDER_ADDRESS` - MinimalForwarder contract address
+- `NEXT_PUBLIC_CHAIN_ID` - Chain ID (31337 for Anvil)
+- `NEXT_PUBLIC_RPC_URL` - RPC endpoint (http://127.0.0.1:8545 for Anvil)
+
+## Best Practices
+
+- Always check `CONTRACTS.DAO_VOTING !== "0x0"` before enabling queries
+- Use `enabled` option in `useReadContract` to conditionally fetch
+- Handle contract not deployed errors gracefully (see web3-hooks rule)

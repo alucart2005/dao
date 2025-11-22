@@ -1,0 +1,93 @@
+---
+description: DAO voting system architecture and patterns
+---
+
+# DAO Voting System Architecture
+
+## System Overview
+
+This project implements a DAO (Decentralized Autonomous Organization) voting system with gasless voting capabilities using meta-transactions.
+
+## Core Components
+
+### Smart Contracts
+
+1. **DAOVoting Contract** ([DAOVoting.sol](mdc:sc/src/DAOVoting.sol))
+
+   - Main DAO contract with proposal creation and voting
+   - Inherits from ERC2771Context for meta-transaction support
+   - Voting power based on user balance in the DAO
+   - Proposals require minimum 10% of total balance to create
+   - Execution delay of 1 day after deadline
+
+2. **MinimalForwarder Contract** ([MinimalForwarder.sol](mdc:sc/src/MinimalForwarder.sol))
+   - Handles meta-transactions (ERC-2771)
+   - Verifies signatures and forwards calls
+   - Used for gasless voting
+
+### Frontend Architecture
+
+1. **DAO Hook** ([useDAO.ts](mdc:web/hooks/useDAO.ts))
+
+   - Main hook for DAO interactions
+   - Manages proposals, votes, balances
+
+2. **Gasless Vote Hook** ([useGaslessVote.ts](mdc:web/hooks/useGaslessVote.ts))
+
+   - Handles gasless voting via meta-transactions
+   - Signs EIP-712 typed data
+   - Submits to relay API
+
+3. **Components**
+   - [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Proposal creation form
+   - [ProposalList.tsx](mdc:web/components/ProposalList.tsx) - List of proposals
+   - [ProposalCard.tsx](mdc:web/components/ProposalCard.tsx) - Individual proposal display
+   - [VoteButtons.tsx](mdc:web/components/VoteButtons.tsx) - Voting interface
+
+## Proposal Lifecycle
+
+1. **Creation**: User with ≥10% of total balance creates proposal
+2. **Voting Period**: Users vote FOR, AGAINST, or ABSTAIN (weighted by balance)
+3. **Deadline**: Voting ends at proposal deadline
+4. **Execution Delay**: 1 day security period after deadline
+5. **Execution**: If `votesFor > votesAgainst`, proposal can be executed
+6. **Completion**: ETH transferred to recipient
+
+## Voting Mechanism
+
+- Votes are weighted by user's balance in the DAO
+- Users can change their vote before deadline
+- Previous vote weight is removed, new vote weight is added
+- Total votes tracked: `votesFor`, `votesAgainst`, `votesAbstain`
+
+## Gasless Voting Flow
+
+1. User signs EIP-712 typed data (off-chain, no gas)
+2. Signed request sent to relay API (`/api/relay`)
+3. Relayer validates signature
+4. Relayer submits transaction to MinimalForwarder
+5. MinimalForwarder forwards call to DAOVoting contract
+6. Relayer pays gas fees
+7. Transaction completes on-chain
+
+## API Routes
+
+- `/api/relay` - Receives signed meta-transactions, forwards to blockchain
+- `/api/nonce` - Returns current nonce for an address
+- `/api/daemon` - Executes eligible proposals automatically
+
+## Security Considerations
+
+- Minimum proposal threshold prevents spam (10% of total balance)
+- Execution delay prevents rushed proposals (1 day)
+- Signature verification prevents replay attacks
+- Nonce tracking prevents double-spending
+- Balance-based voting prevents Sybil attacks (requires ETH deposit)
+
+## Deployment Flow
+
+1. Deploy MinimalForwarder contract
+2. Deploy DAOVoting contract with MinimalForwarder address as trusted forwarder
+3. Fund relayer account with ETH for gas
+4. Configure environment variables with contract addresses
+5. Deploy frontend with correct configuration

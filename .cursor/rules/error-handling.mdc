@@ -1,0 +1,123 @@
+---
+globs: **/*.ts,**/*.tsx
+description: Error handling patterns for Web3 applications
+---
+
+# Error Handling Best Practices
+
+## Contract Deployment Errors
+
+Always detect and handle contract not deployed errors gracefully:
+
+```typescript
+// Helper function to detect contract not deployed errors
+function isContractNotDeployedError(error: unknown): boolean {
+  if (!error) return false;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return (
+    errorMessage.includes("returned no data") ||
+    errorMessage.includes("0x") ||
+    errorMessage.includes("contract does not have the function") ||
+    errorMessage.includes("address is not a contract")
+  );
+}
+```
+
+## Wagmi Query Configuration
+
+Configure queries to avoid retries and auto-refetch when contract is not deployed:
+
+```typescript
+query: {
+  enabled: !!address && CONTRACTS.DAO_VOTING !== "0x0",
+  refetchInterval: (query) => {
+    // Disable auto-refetch if contract not deployed
+    if (query.state.error && isContractNotDeployedError(query.state.error)) {
+      return false;
+    }
+    return 10000; // Auto-refetch every 10 seconds
+  },
+  retry: (failureCount, error) => {
+    // Don't retry if contract not deployed
+    if (isContractNotDeployedError(error)) {
+      return false;
+    }
+    return failureCount < 3;
+  },
+}
+```
+
+## Logging Strategy
+
+- **Contract not deployed**: Use `console.warn` with helpful message (log only once)
+- **Unexpected errors**: Use `console.error` with full error details
+- **User-facing errors**: Show clear, actionable messages in UI
+
+```typescript
+// Prevent repeated logging
+let hasLoggedContractError = false;
+
+if (error && !hasLoggedContractError) {
+  if (isContractNotDeployedError(error)) {
+    console.warn(
+      "⚠️ Contrato no desplegado. Por favor, despliega los contratos primero:",
+      "\n  cd sc && forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://localhost:8545 --broadcast"
+    );
+    hasLoggedContractError = true;
+  } else {
+    console.error("Error reading user balance:", error);
+  }
+}
+```
+
+## UI Error Display
+
+Show user-friendly error messages in components:
+
+```tsx
+{
+  contractNotDeployed && (
+    <div className="p-4 rounded-lg mb-4" style={{ backgroundColor: "#fef3c7" }}>
+      <p className="font-semibold mb-2">⚠️ Contrato no desplegado</p>
+      <p className="text-sm mb-2">
+        El contrato inteligente no está desplegado en la dirección configurada.
+        Por favor, despliega los contratos primero.
+      </p>
+      <details>
+        <summary>Ver instrucciones</summary>
+        <code>
+          cd sc
+          <br />
+          forge script script/DeployLocal.s.sol:DeployLocal --rpc-url
+          http://localhost:8545 --broadcast
+        </code>
+      </details>
+    </div>
+  );
+}
+```
+
+## Button States
+
+Disable interactive elements when contract is not available:
+
+```tsx
+<button
+  disabled={isPending || !amount || contractNotDeployed}
+  title={contractNotDeployed ? "El contrato no está desplegado" : undefined}
+>
+  {contractNotDeployed ? "Contrato no desplegado" : "Enviar fondos"}
+</button>
+```
+
+## Error Types to Handle
+
+1. **Contract not deployed**: Show deployment instructions
+2. **Wallet not connected**: Prompt user to connect
+3. **Network mismatch**: Show chain switching instructions
+4. **Transaction failures**: Show specific error message
+5. **RPC errors**: Show connection troubleshooting
+
+## Reference Implementation
+
+See [useDAO.ts](mdc:web/hooks/useDAO.ts) and [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) for complete error handling examples.

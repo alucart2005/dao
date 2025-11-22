@@ -1,0 +1,140 @@
+---
+description: Web3, Wagmi, and blockchain integration patterns
+globs: *use*.ts,*use*.tsx,*contracts*.ts,*chain*.ts,*eip712*.ts
+---
+
+# Web3 & Wagmi Integration Guidelines
+
+## Wagmi v3 Patterns
+
+- Use Wagmi hooks for all blockchain interactions
+- Configuration in [chain.ts](mdc:web/lib/config/chain.ts) via `createConfig`
+- Wrap app with `WagmiProvider` from [providers.tsx](mdc:web/lib/providers.tsx)
+- Use `useAccount` for wallet state, `useConnect`/`useDisconnect` for wallet actions
+- Contract reads: `useReadContract({ address, abi, functionName, args })`
+- Contract writes: `useWriteContract()` with `writeContract()` method
+- Transaction state: `useWaitForTransactionReceipt({ hash })`
+- **IMPORTANT**: Wagmi v3 uses `signTypedDataAsync` (not `signTypedData`) from `useSignTypedData()`
+
+## Meta-Transactions (EIP-712)
+
+- Use [eip712.ts](mdc:web/lib/utils/eip712.ts) utilities for signing meta-transactions
+- Forward requests via MinimalForwarder contract
+- Always fetch nonce before creating forward request
+- Use `getNonce` API endpoint: `/api/nonce?address=<address>&forwarder=<forwarder>`
+- Relay meta-transactions via `/api/relay` endpoint
+- Domain separator configuration in [chain.ts](mdc:web/lib/config/chain.ts)
+
+## Contract Interaction Pattern
+
+- Import ABIs from [contracts.ts](mdc:web/lib/config/contracts.ts)
+- Import contract addresses from `CONTRACTS` constant
+- Always handle BigInt values correctly:
+  - **For display**: Use `formatEther()` from viem to convert BigInt to ETH string
+  - **For JSON serialization**: Convert BigInt to string before `JSON.stringify()`
+  - **In API routes**: Convert string back to BigInt using `BigInt(value)`
+- Use `formatEther`/`parseEther` from viem for ETH amounts (not `formatUnits`/`parseUnits`)
+- Handle transaction states: pending, success, error
+
+## Gasless Voting
+
+- Use [useGaslessVote.ts](mdc:web/hooks/useGaslessVote.ts) hook pattern
+- **Wagmi v3**: Use `signTypedDataAsync` from `useSignTypedData()` hook (returns Promise directly)
+- Sign typed data with EIP-712 format
+- Submit signed meta-transaction to relay API
+- Relay API pays gas on behalf of user
+- Handle user rejection errors (code 4001 or "reject" in message)
+- Always validate signature format before sending to API
+
+## Chain Configuration
+
+- Local development: Chain ID 31337, RPC `http://127.0.0.1:8545`
+- Use environment variables for chain configuration
+- Support multiple chains via Wagmi's chain configuration
+- Always validate chain ID matches expected network
+
+## Example Wagmi Hook Usage
+
+```typescript
+import { useReadContract, useWriteContract } from "wagmi";
+import { CONTRACTS, DAO_VOTING_ABI } from "@/lib/config/contracts";
+
+function useProposal(proposalId: bigint) {
+  const { data: proposal } = useReadContract({
+    address: CONTRACTS.DAO_VOTING,
+    abi: DAO_VOTING_ABI,
+    functionName: "getProposal",
+    args: [proposalId],
+  });
+
+  return proposal;
+}
+
+function useVote() {
+  const { writeContract, isPending } = useWriteContract();
+
+  const vote = (proposalId: bigint, voteType: number) => {
+    writeContract({
+      address: CONTRACTS.DAO_VOTING,
+      abi: DAO_VOTING_ABI,
+      functionName: "vote",
+      args: [proposalId, voteType],
+    });
+  };
+
+  return { vote, isPending };
+}
+```
+
+## Relayer Service
+
+- Relayer API route: [app/api/relay/route.ts](mdc:web/app/api/relay/route.ts)
+- Relayer must have `RELAYER_PRIVATE_KEY` configured
+- Relayer address must have ETH for gas
+- Always validate signatures before forwarding
+- Return transaction hash to client
+- **BigInt Serialization**: Convert BigInt values to strings in request body, convert back in API:
+
+  ```typescript
+  // Client side (useGaslessVote.ts)
+  const serializableRequest = {
+    from: forwardRequest.from,
+    to: forwardRequest.to,
+    value: forwardRequest.value.toString(), // BigInt to string
+    gas: forwardRequest.gas.toString(),
+    nonce: forwardRequest.nonce.toString(),
+    data: forwardRequest.data,
+  };
+
+  // API side (relay/route.ts)
+  const forwardRequest = {
+    from: forwardRequestRaw.from as Address,
+    to: forwardRequestRaw.to as Address,
+    value: BigInt(forwardRequestRaw.value), // String back to BigInt
+    gas: BigInt(forwardRequestRaw.gas),
+    nonce: BigInt(forwardRequestRaw.nonce),
+    data: forwardRequestRaw.data as `0x${string}`,
+  };
+  ```
+
+## Error Handling
+
+Always handle contract deployment errors gracefully. See [error-handling.mdc](mdc:.cursor/rules/error-handling.mdc) and [web3-hooks.mdc](mdc:.cursor/rules/web3-hooks.mdc) for detailed patterns:
+
+- Detect contract not deployed errors (returned no data, 0x, etc.)
+- Disable retries when contract doesn't exist
+- Disable auto-refetch when contract not deployed
+- Log errors only once to avoid console spam
+- Show user-friendly error messages in UI
+
+## Best Practices
+
+- Always check wallet connection before contract calls
+- Always check `CONTRACTS.DAO_VOTING !== "0x0"` before enabling queries
+- Show loading states during transactions
+- Display transaction hashes for user tracking
+- Handle network mismatches gracefully
+- Provide clear error messages for failed transactions
+- Cache contract reads when possible
+- Use React Query for efficient data fetching (via Wagmi's built-in support)
+- Handle contract not deployed state in UI (show helpful messages)

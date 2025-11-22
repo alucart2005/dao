@@ -1,0 +1,79 @@
+---
+globs: *.ts,*.tsx
+---
+
+# TypeScript & Next.js Development Guidelines
+
+## Code Style
+
+- Use TypeScript strict mode (enabled in [tsconfig.json](mdc:web/tsconfig.json))
+- Use path aliases: `@/*` maps to `web/*` (configured in tsconfig.json)
+- Always use explicit types for function parameters and return values
+- Use `const` assertions (`as const`) for immutable data structures
+- Prefer `interface` over `type` for object shapes
+- Use semicolons
+
+## Next.js 16 App Router
+
+- Use App Router (not Pages Router) - files in `app/` directory
+- Server Components by default, use `"use client"` directive for client components
+- API routes in `app/api/[route]/route.ts`
+- Layout files: `app/layout.tsx` wraps all pages
+- Page files: `app/page.tsx` is the home page
+
+## React Patterns
+
+- Use functional components with hooks
+- Custom hooks in `hooks/` directory
+- Component files use PascalCase (e.g., `ProposalCard.tsx`)
+- Extract reusable logic into custom hooks
+- Use React Query for server state management (via Wagmi)
+
+## Web3 Integration
+
+- Use Wagmi v2 hooks for blockchain interactions
+- Contract interactions via `useReadContract` and `useWriteContract`
+- Wallet connections via `useAccount`, `useConnect`, `useDisconnect`
+- Chain configuration in [chain.ts](mdc:web/lib/config/chain.ts)
+- Contract ABIs and addresses in [contracts.ts](mdc:web/lib/config/contracts.ts)
+
+## Environment Variables
+
+- Use `NEXT_PUBLIC_` prefix for client-accessible environment variables
+- Never expose private keys in client code
+- Contract addresses: `NEXT_PUBLIC_DAO_ADDRESS`, `NEXT_PUBLIC_FORWARDER_ADDRESS`
+- Chain config: `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_RPC_URL`
+- Relayer key: `RELAYER_PRIVATE_KEY` (server-side only)
+
+## Error Handling
+
+- Always handle async errors with try-catch
+- Provide user-friendly error messages
+- Log errors appropriately (console.error in development)
+- Handle wallet connection errors gracefully
+
+## File Organization
+
+- Components in `components/` directory
+- Hooks in `hooks/` directory
+- Utilities in `lib/utils/` directory
+- Configuration in `lib/config/` directory
+- Type definitions near their usage or in shared types file
+
+## Example Component Pattern
+
+```typescript
+"use client";
+
+import { useAccount } from "wagmi";
+
+export function MyComponent() {
+  const { address, isConnected } = useAccount();
+
+  if (!isConnected) {
+    return <div>Please connect your wallet</div>;
+  }
+
+  return <div>Connected: {address}</div>;
+}
+```

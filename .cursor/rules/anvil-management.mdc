@@ -1,0 +1,155 @@
+---
+globs: **/api/anvil/**/*.ts,**/components/FundingPanel.tsx,**/lib/utils/foundry.ts
+description: Anvil local blockchain management patterns
+---
+
+# Anvil Management Patterns
+
+## Overview
+
+Anvil is Foundry's local blockchain node. The application can manage Anvil lifecycle (start/stop) and check its status from the UI.
+
+## API Endpoints
+
+### Check Anvil Status
+
+**Endpoint**: `GET /api/anvil/status`
+
+```typescript
+// Returns:
+{
+  success: boolean;
+  running: boolean;
+  blockNumber?: string;
+  error?: string;
+}
+```
+
+### Start Anvil
+
+**Endpoint**: `POST /api/anvil/start`
+
+- Only works in development mode
+- Checks if Anvil is already running
+- Starts Anvil in background (Windows: new window, Unix/Mac: nohup)
+- Verifies Anvil started by checking RPC endpoint
+- Returns success/error status
+
+### Stop Anvil
+
+**Endpoint**: `POST /api/anvil/stop`
+
+- Only works in development mode
+- Finds process using port 8545
+- Kills the process (Windows: taskkill, Unix/Mac: kill)
+- Returns success/error status
+
+## Foundry Path Utilities
+
+Use [foundry.ts](mdc:web/lib/utils/foundry.ts) utilities to locate Foundry executables:
+
+```typescript
+import { findFoundryPath, getFoundryEnv } from "@/lib/utils/foundry";
+
+// Find forge and anvil executables
+const { forge, anvil, found } = await findFoundryPath();
+
+if (!found) {
+  // Handle Foundry not found
+}
+
+// Get environment with extended PATH
+const env = getFoundryEnv();
+```
+
+## Component Integration
+
+### FundingPanel Pattern
+
+In [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx):
+
+1. **Check Anvil status** on mount and periodically (every 5 seconds)
+2. **Only show status** when Anvil is NOT running (hide when running)
+3. **Provide start button** when Anvil is stopped
+4. **Check Anvil before deployment** - don't allow deployment if Anvil is not running
+
+```tsx
+// Check Anvil status
+useEffect(() => {
+  const checkAnvilStatus = async () => {
+    try {
+      const response = await fetch("/api/anvil/status");
+      const data = await response.json();
+      setAnvilStatus({ running: data.running || false, checking: false });
+    } catch (error) {
+      setAnvilStatus({ running: false, checking: false });
+    }
+  };
+
+  checkAnvilStatus();
+  const interval = setInterval(checkAnvilStatus, 5000);
+  return () => clearInterval(interval);
+}, []);
+
+// Only show when NOT running
+{
+  !anvilStatus.running && (
+    <div>
+      <p>Anvil: Detenido</p>
+      <button onClick={handleStartAnvil}>▶ Iniciar Anvil</button>
+    </div>
+  );
+}
+```
+
+## Platform-Specific Commands
+
+### Windows
+
+```typescript
+// Start Anvil
+const command = `start "Anvil" cmd /c "cd /d "${scDir}" && ${anvilCmd}"`;
+
+// Stop Anvil
+const netstatCmd = `netstat -ano | findstr :8545`;
+const killCmd = `taskkill /PID ${pid} /F`;
+```
+
+### Unix/Mac
+
+```typescript
+// Start Anvil
+const command = `cd "${scDir}" && nohup ${anvilCmd} > anvil.log 2>&1 &`;
+
+// Stop Anvil
+const lsofCmd = `lsof -t -i:8545`;
+const killCmd = `kill -9 ${pids.join(" ")}`;
+```
+
+## Error Handling
+
+- **Foundry not found**: Check PATH and common installation directories
+- **Anvil already running**: Return success with `alreadyRunning: true`
+- **Port in use**: Try to find and kill existing process
+- **Startup verification**: Poll RPC endpoint to verify Anvil started
+
+## Security
+
+- **Development only**: All Anvil management endpoints check `NODE_ENV === "production"` and return 403 if in production
+- **No authentication**: Only use in local development environment
+
+## Best Practices
+
+1. **Always check Anvil status** before attempting contract deployment
+2. **Show clear status** to user (running/stopped)
+3. **Provide helpful error messages** if Anvil cannot be started
+4. **Poll status periodically** to keep UI in sync
+5. **Hide status when running** - only show when action is needed (stopped)
+
+## Reference Files
+
+- [anvil/status/route.ts](mdc:web/app/api/anvil/status/route.ts) - Status check endpoint
+- [anvil/start/route.ts](mdc:web/app/api/anvil/start/route.ts) - Start Anvil endpoint
+- [anvil/stop/route.ts](mdc:web/app/api/anvil/stop/route.ts) - Stop Anvil endpoint
+- [foundry.ts](mdc:web/lib/utils/foundry.ts) - Foundry path utilities
+- [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) - UI integration example

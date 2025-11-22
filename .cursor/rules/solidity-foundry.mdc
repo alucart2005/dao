@@ -1,0 +1,72 @@
+---
+globs: *.sol
+---
+
+# Solidity & Foundry Development Guidelines
+
+## Code Style
+
+- Use Solidity version `^0.8.13` or compatible
+- Follow OpenZeppelin patterns and security practices
+- Always use SPDX license identifiers: `// SPDX-License-Identifier: MIT`
+- Use NatSpec comments for all public/external functions
+- Use `_msgSender()` from ERC2771Context instead of `msg.sender` when meta-transactions are supported
+
+## Foundry Conventions
+
+- Test files should end with `.t.sol` (e.g., `DAOVoting.t.sol`)
+- Script files should end with `.s.sol` (e.g., `DeployLocal.s.sol`)
+- Use `forge-std` test utilities from `lib/forge-std`
+- Import OpenZeppelin contracts from `@openzeppelin/contracts`
+
+## Security Best Practices
+
+- Always validate inputs (address != address(0), amounts > 0, etc.)
+- Use checks-effects-interactions pattern
+- Reentrancy guards when handling external calls
+- Prefer `require()` statements with descriptive error messages
+- Use `SafeMath` operations or rely on Solidity 0.8+ built-in overflow protection
+- Never use `tx.origin` - use `msg.sender` or `_msgSender()`
+
+## Contract Structure
+
+- State variables should be private/internal when possible
+- Events should be emitted for all important state changes
+- View functions for reading state
+- Payable functions only when receiving ETH
+- Use enums for vote types and status states
+
+## Testing
+
+- Write comprehensive tests for all public functions
+- Test edge cases and error conditions
+- Use Foundry's fuzzing capabilities when applicable
+- Mock external dependencies when needed
+
+## Example Contract Pattern
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+
+contract MyContract is ERC2771Context {
+    // Events
+    event SomethingHappened(address indexed user, uint256 amount);
+
+    // State variables
+    mapping(address => uint256) private _balances;
+
+    // Constructor
+    constructor(address trustedForwarder) ERC2771Context(trustedForwarder) {}
+
+    // Functions
+    function doSomething(uint256 amount) external {
+        address user = _msgSender();
+        require(amount > 0, "MyContract: invalid amount");
+        // Implementation
+        emit SomethingHappened(user, amount);
+    }
+}
+```

@@ -1,0 +1,83 @@
+---
+globs: **/components/**/*.tsx,**/components/**/*.ts
+description: React component patterns for Web3 applications
+---
+
+# React Components - Web3 Patterns
+
+## Contract State Handling
+
+Always check if contract is deployed before showing data:
+
+```typescript
+// Detect contract deployment errors
+const contractNotDeployed =
+  (balanceError && isContractNotDeployedError(balanceError)) ||
+  (totalBalanceError && isContractNotDeployedError(totalBalanceError));
+```
+
+## User Feedback
+
+Show clear messages when contract is not deployed:
+
+```tsx
+{
+  contractNotDeployed && (
+    <div className="p-4 rounded-lg mb-4" style={{ backgroundColor: "#fef3c7" }}>
+      <p className="font-semibold mb-2">⚠️ Contrato no desplegado</p>
+      <p className="text-sm mb-2">
+        El contrato inteligente no está desplegado en la dirección configurada.
+      </p>
+      <details>
+        <summary>Ver instrucciones</summary>
+        <code>
+          cd sc
+          <br />
+          forge script script/DeployLocal.s.sol:DeployLocal --rpc-url
+          http://localhost:8545 --broadcast
+        </code>
+      </details>
+    </div>
+  );
+}
+```
+
+## Button States
+
+Disable buttons when contract is not available:
+
+```tsx
+<button
+  disabled={isPending || !amount || contractNotDeployed}
+  title={contractNotDeployed ? "El contrato no está desplegado" : undefined}
+>
+  {contractNotDeployed ? "Contrato no desplegado" : "Enviar fondos"}
+</button>
+```
+
+## Styling
+
+Use CSS variables defined in [globals.css](mdc:web/app/globals.css):
+
+- `var(--color-seaweed)` - Primary action color
+- `var(--color-stormy-teal)` - Secondary color
+- `var(--color-carbon-black)` - Text color
+- `var(--color-alabaster-grey)` - Background color
+
+## Compact Design Patterns
+
+For compact UI components, see [ui-compact-design.mdc](mdc:.cursor/rules/ui-compact-design.mdc):
+
+- Use `p-4` instead of `p-6` for padding
+- Use `text-xs` or `text-sm` for secondary text
+- Use grid layouts for related fields
+- Place related information inline when possible
+- Use collapsible sections for detailed information
+
+## Reference Components
+
+- [FundingPanel.tsx](mdc:web/components/FundingPanel.tsx) - Contract state handling example
+- [ConnectWallet.tsx](mdc:web/components/ConnectWallet.tsx) - Wallet connection pattern
+- [VotingSummary.tsx](mdc:web/components/VotingSummary.tsx) - Compact summary with collapsible sections
+- [ProposalCard.tsx](mdc:web/components/ProposalCard.tsx) - Compact proposal display
+- [CreateProposal.tsx](mdc:web/components/CreateProposal.tsx) - Grid layout for form fields
