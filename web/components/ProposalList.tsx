@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { CONTRACTS, DAO_VOTING_ABI } from "@/lib/config/contracts";
 import { ProposalCard } from "./ProposalCard";
+import { VotingSummary } from "./VotingSummary";
 import { createPublicClient, http, isAddress } from "viem";
 import { localChain } from "@/lib/config/chain";
 
@@ -350,6 +351,11 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                   </span>
                 )}
               </div>
+
+              {/* Voting Summary */}
+              <VotingSummary proposalIds={proposalIds} />
+
+              {/* Proposal Cards */}
               {proposalIds
                 .slice()
                 .reverse()
