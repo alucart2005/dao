@@ -1,0 +1,291 @@
+---
+description: Security best practices for smart contracts and Web3 applications
+globs: **/*.sol,**/*.ts,**/*.tsx
+---
+
+# Security Best Practices
+
+## Smart Contract Security
+
+### Input Validation
+
+Always validate inputs in smart contracts:
+
+```solidity
+function createProposal(
+    address recipient,
+    uint256 amount,
+    string memory description,
+    uint256 deadline
+) external {
+    require(recipient != address(0), "DAOVoting: invalid recipient");
+    require(amount > 0, "DAOVoting: amount must be greater than 0");
+    require(deadline > block.timestamp, "DAOVoting: invalid deadline");
+    // ... rest of function
+}
+```
+
+### Checks-Effects-Interactions Pattern
+
+Always follow the checks-effects-interactions pattern:
+
+```solidity
+function vote(uint256 proposalId, uint8 voteType) external {
+    // 1. CHECKS
+    require(proposalId < proposals.length, "DAOVoting: invalid proposal");
+    require(voteType <= 2, "DAOVoting: invalid vote type");
+    
+    // 2. EFFECTS (update state)
+    // Remove previous vote weight
+    if (userVotes[proposalId][msg.sender] != VoteType.None) {
+        // Remove previous vote
+    }
+    // Add new vote
+    userVotes[proposalId][msg.sender] = VoteType(voteType);
+    
+    // 3. INTERACTIONS (external calls)
+    // No external calls in this example, but if there were, do them last
+}
+```
+
+### Reentrancy Protection
+
+Use reentrancy guards for functions with external calls:
+
+```solidity
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract MyContract is ReentrancyGuard {
+    function withdraw() external nonReentrant {
+        // Safe withdrawal logic
+    }
+}
+```
+
+### Access Control
+
+Use OpenZeppelin's access control when needed:
+
+```solidity
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MyContract is Ownable {
+    function adminFunction() external onlyOwner {
+        // Only owner can call
+    }
+}
+```
+
+### Integer Overflow/Underflow
+
+Solidity 0.8+ has built-in overflow protection, but be explicit:
+
+```solidity
+// Safe: Solidity 0.8+ automatically reverts on overflow
+uint256 total = balance1 + balance2;
+
+// For older versions or explicit checks:
+require(balance1 + balance2 >= balance1, "Overflow");
+```
+
+### Never Use `tx.origin`
+
+Always use `msg.sender` or `_msgSender()` (for meta-transactions):
+
+```solidity
+// ❌ BAD
+address user = tx.origin;
+
+// ✅ GOOD
+address user = msg.sender;
+
+// ✅ GOOD (for ERC2771)
+address user = _msgSender();
+```
+
+## Frontend Security
+
+### Private Key Management
+
+**NEVER** expose private keys in client code:
+
+```typescript
+// ❌ BAD - Never do this
+const privateKey = "0x123..."; // Exposed in client!
+
+// ✅ GOOD - Use environment variables (server-side only)
+const relayerKey = process.env.RELAYER_PRIVATE_KEY; // Server-side only
+```
+
+### Environment Variables
+
+- **Client-accessible**: Use `NEXT_PUBLIC_` prefix
+- **Server-only**: No prefix (never exposed to client)
+- **Never commit secrets**: Use `.env.local` (in `.gitignore`)
+
+```typescript
+// ✅ Client-accessible
+const contractAddress = process.env.NEXT_PUBLIC_DAO_ADDRESS;
+
+// ✅ Server-only (API routes)
+const relayerKey = process.env.RELAYER_PRIVATE_KEY;
+```
+
+### Input Sanitization
+
+Validate and sanitize user inputs:
+
+```typescript
+function validateAmount(amount: string): boolean {
+  const num = parseFloat(amount);
+  return !isNaN(num) && num > 0 && num <= Number.MAX_SAFE_INTEGER;
+}
+
+function sanitizeAddress(address: string): Address | null {
+  if (!address || !address.startsWith("0x") || address.length !== 42) {
+    return null;
+  }
+  return address as Address;
+}
+```
+
+### Signature Verification
+
+Always verify signatures on the server:
+
+```typescript
+// API route - verify signature before processing
+import { verifyTypedData } from "viem";
+
+const isValid = await verifyTypedData({
+  address: forwardRequest.from,
+  domain,
+  types,
+  primaryType: "ForwardRequest",
+  message: forwardRequest,
+  signature: userSignature,
+});
+
+if (!isValid) {
+  return new Response("Invalid signature", { status: 401 });
+}
+```
+
+### Rate Limiting
+
+Implement rate limiting for API routes:
+
+```typescript
+// Simple rate limiting example
+const rateLimitMap = new Map<string, number[]>();
+
+function checkRateLimit(address: string, maxRequests = 10, windowMs = 60000) {
+  const now = Date.now();
+  const requests = rateLimitMap.get(address) || [];
+  const recentRequests = requests.filter((time) => now - time < windowMs);
+  
+  if (recentRequests.length >= maxRequests) {
+    throw new Error("Rate limit exceeded");
+  }
+  
+  recentRequests.push(now);
+  rateLimitMap.set(address, recentRequests);
+}
+```
+
+### XSS Prevention
+
+Sanitize user-generated content:
+
+```typescript
+// Use DOMPurify or similar for HTML content
+import DOMPurify from "isomorphic-dompurify";
+
+const sanitized = DOMPurify.sanitize(userInput);
+```
+
+## Meta-Transaction Security
+
+### Nonce Management
+
+Always check and increment nonces:
+
+```solidity
+function verify(
+    ForwardRequest calldata req,
+    bytes calldata signature
+) external view returns (bool) {
+    // Check nonce
+    require(nonces[req.from] == req.nonce, "MinimalForwarder: invalid nonce");
+    // ... verify signature
+}
+
+function execute(
+    ForwardRequest calldata req,
+    bytes calldata signature
+) external returns (bool, bytes memory) {
+    // Verify first
+    require(verify(req, signature), "MinimalForwarder: invalid signature");
+    
+    // Increment nonce (prevents replay attacks)
+    nonces[req.from]++;
+    
+    // Execute
+    // ...
+}
+```
+
+### Domain Separator
+
+Always use correct domain separator for EIP-712:
+
+```typescript
+const domain = {
+  name: "MinimalForwarder",
+  version: "1",
+  chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID),
+  verifyingContract: CONTRACTS.MINIMAL_FORWARDER as Address,
+};
+```
+
+## Common Vulnerabilities to Avoid
+
+1. **Reentrancy**: Use `nonReentrant` modifier
+2. **Integer overflow**: Rely on Solidity 0.8+ or use SafeMath
+3. **Access control**: Always check permissions
+4. **Unchecked external calls**: Validate return values
+5. **Front-running**: Use commit-reveal schemes if needed
+6. **Signature replay**: Use nonces and domain separators
+7. **Gas griefing**: Limit gas in loops
+8. **Denial of service**: Limit array sizes, use pagination
+
+## Security Checklist
+
+Before deploying contracts:
+
+- [ ] All inputs validated
+- [ ] Access control implemented
+- [ ] Reentrancy protection where needed
+- [ ] Integer overflow protection
+- [ ] Events emitted for important actions
+- [ ] Error messages are descriptive
+- [ ] Contract tested thoroughly
+- [ ] Code reviewed by team
+- [ ] Considered edge cases
+- [ ] Gas optimization reviewed
+
+Before deploying frontend:
+
+- [ ] No private keys in client code
+- [ ] Environment variables properly configured
+- [ ] Input validation implemented
+- [ ] Error handling in place
+- [ ] Rate limiting on API routes
+- [ ] Signature verification on server
+- [ ] XSS prevention for user content
+
+## Resources
+
+- [OpenZeppelin Security Guidelines](https://docs.openzeppelin.com/contracts/security)
+- [Consensys Best Practices](https://consensys.github.io/smart-contract-best-practices/)
+- [SWC Registry](https://swcregistry.io/) - Smart contract weakness classification

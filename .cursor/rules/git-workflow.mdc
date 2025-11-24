@@ -1,0 +1,150 @@
+---
+description: Git workflow, branching strategy, and version control conventions
+---
+
+# Git Workflow & Version Control
+
+## Branching Strategy
+
+### Main Branches
+
+- **`main`** - Production-ready code, always stable
+- **`dao`** - Main development branch for DAO features
+- **`version-X.Y.Z`** - Version branches for releases (e.g., `version-0.5.2`)
+
+### Feature Branches
+
+- **`feature/description`** - New features (e.g., `feature/gasless-voting`)
+- **`fix/description`** - Bug fixes (e.g., `fix/vote-calculation`)
+- **`refactor/description`** - Code refactoring (e.g., `refactor/hooks-structure`)
+
+## Commit Conventions
+
+### Commit Message Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, no logic change)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks (dependencies, config)
+- `perf`: Performance improvements
+- `ci`: CI/CD changes
+
+### Examples
+
+```
+feat(dao): add gasless voting via meta-transactions
+
+Implement EIP-712 signing and relay API for gasless voting.
+Users can now vote without paying gas fees.
+
+Closes #123
+```
+
+```
+fix(contracts): correct vote weight calculation
+
+Fix bug where previous vote weight was not properly removed
+when user changed their vote.
+
+Fixes #456
+```
+
+## Workflow Process
+
+1. **Create feature branch** from `dao` or `main`:
+   ```bash
+   git checkout dao
+   git pull origin dao
+   git checkout -b feature/my-feature
+   ```
+
+2. **Make changes** and commit frequently with clear messages
+
+3. **Keep branch updated**:
+   ```bash
+   git checkout dao
+   git pull origin dao
+   git checkout feature/my-feature
+   git merge dao
+   ```
+
+4. **Before merging**, ensure:
+   - All tests pass
+   - Code is formatted
+   - No linter errors
+   - Documentation updated if needed
+
+5. **Merge to target branch**:
+   ```bash
+   git checkout dao
+   git merge feature/my-feature --no-ff
+   git push origin dao
+   ```
+
+## Version Management
+
+### Version Branches
+
+- Create version branches for releases: `version-0.5.2`
+- Tag releases: `git tag -a v0.5.2 -m "Release version 0.5.2"`
+- Merge version branches to `main` when stable
+
+### Copying Content Between Branches
+
+To copy all content from one branch to another:
+
+```bash
+# Switch to target branch
+git checkout target-branch
+
+# Merge source branch (fast-forward if possible)
+git merge source-branch --no-edit
+```
+
+## Best Practices
+
+- **Never commit directly to `main`** - always use branches
+- **Write clear, descriptive commit messages**
+- **Keep commits atomic** - one logical change per commit
+- **Pull before pushing** to avoid conflicts
+- **Use `--no-ff` for feature merges** to preserve branch history
+- **Delete merged branches** after successful merge:
+  ```bash
+  git branch -d feature/my-feature
+  git push origin --delete feature/my-feature
+  ```
+
+## Handling Conflicts
+
+1. Pull latest changes: `git pull origin branch-name`
+2. Resolve conflicts in affected files
+3. Stage resolved files: `git add <file>`
+4. Complete merge: `git commit`
+5. Push: `git push origin branch-name`
+
+## Discarding Changes
+
+- **Unstaged changes**: `git restore <file>` or `git restore .`
+- **Staged changes**: `git restore --staged <file>`
+- **All local changes**: `git restore .` then `git clean -fd` (careful!)
+- **Switch branch with uncommitted changes**: `git stash` then `git stash pop`
+
+## Remote Management
+
+- **Check remote branches**: `git branch -r`
+- **Delete remote branch**: `git push origin --delete branch-name`
+- **Fetch latest**: `git fetch origin`
+- **Sync local with remote**: `git pull origin branch-name`

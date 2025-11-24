@@ -1,0 +1,241 @@
+---
+description: Testing patterns for smart contracts and frontend components
+globs: **/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/*.t.sol
+---
+
+# Testing Patterns
+
+## Smart Contract Testing (Foundry)
+
+### Test File Structure
+
+Test files should end with `.t.sol` (e.g., `DAOVoting.t.sol`):
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+import {Test, console} from "forge-std/Test.sol";
+import {DAOVoting} from "../src/DAOVoting.sol";
+
+contract DAOVotingTest is Test {
+    DAOVoting dao;
+    address user1 = address(0x1);
+    address user2 = address(0x2);
+
+    function setUp() public {
+        // Deploy contracts and set up test state
+        dao = new DAOVoting(address(0x123)); // MinimalForwarder address
+    }
+
+    function test_CreateProposal() public {
+        // Arrange
+        vm.deal(user1, 1 ether);
+        vm.prank(user1);
+        dao.fund{value: 1 ether}();
+
+        // Act
+        vm.prank(user1);
+        uint256 proposalId = dao.createProposal(
+            user2,
+            0.5 ether,
+            "Test proposal",
+            block.timestamp + 1 days
+        );
+
+        // Assert
+        assertEq(proposalId, 0);
+        (address recipient, uint256 amount, , , , ) = dao.getProposal(proposalId);
+        assertEq(recipient, user2);
+        assertEq(amount, 0.5 ether);
+    }
+}
+```
+
+### Testing Patterns
+
+- **Use `setUp()`** for common test setup
+- **Use `vm.prank()`** to simulate transactions from specific addresses
+- **Use `vm.deal()`** to give addresses ETH
+- **Use `vm.warp()`** to manipulate block.timestamp
+- **Test edge cases**: zero values, maximum values, boundary conditions
+- **Test error conditions**: use `vm.expectRevert()`
+
+```solidity
+function test_RevertWhen_InsufficientBalance() public {
+    vm.expectRevert("DAOVoting: insufficient balance");
+    dao.createProposal(address(0x1), 1 ether, "Test", block.timestamp + 1 days);
+}
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+forge test
+
+# Run specific test
+forge test --match-test test_CreateProposal
+
+# Run with verbosity
+forge test -vvv
+
+# Run with gas reporting
+forge test --gas-report
+```
+
+## Frontend Testing (React/Next.js)
+
+### Component Testing
+
+Use React Testing Library and Jest:
+
+```typescript
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { FundingPanel } from "@/components/FundingPanel";
+
+describe("FundingPanel", () => {
+  it("renders funding form", () => {
+    render(<FundingPanel />);
+    expect(screen.getByText("Fund DAO")).toBeInTheDocument();
+  });
+
+  it("handles form submission", async () => {
+    const mockWrite = vi.fn();
+    render(<FundingPanel />);
+    
+    const input = screen.getByLabelText("Amount");
+    fireEvent.change(input, { target: { value: "1" } });
+    
+    const button = screen.getByRole("button", { name: /fund/i });
+    fireEvent.click(button);
+    
+    await waitFor(() => {
+      expect(mockWrite).toHaveBeenCalled();
+    });
+  });
+});
+```
+
+### Hook Testing
+
+Test custom hooks with `@testing-library/react-hooks`:
+
+```typescript
+import { renderHook, waitFor } from "@testing-library/react";
+import { useDAO } from "@/hooks/useDAO";
+
+describe("useDAO", () => {
+  it("fetches user balance", async () => {
+    const { result } = renderHook(() => useDAO("0x123..."));
+    
+    await waitFor(() => {
+      expect(result.current.balance).toBeDefined();
+    });
+  });
+});
+```
+
+### Mocking Web3
+
+Mock Wagmi hooks and contract calls:
+
+```typescript
+import { vi } from "vitest";
+
+vi.mock("wagmi", () => ({
+  useAccount: () => ({
+    address: "0x123...",
+    isConnected: true,
+  }),
+  useReadContract: () => ({
+    data: 1000000000000000000n, // 1 ETH in wei
+    isLoading: false,
+  }),
+  useWriteContract: () => ({
+    writeContract: vi.fn(),
+    isPending: false,
+  }),
+}));
+```
+
+### API Route Testing
+
+Test Next.js API routes:
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { POST } from "@/app/api/relay/route";
+
+describe("POST /api/relay", () => {
+  it("relays meta-transaction", async () => {
+    const request = new Request("http://localhost/api/relay", {
+      method: "POST",
+      body: JSON.stringify({
+        from: "0x123...",
+        to: "0x456...",
+        // ... forward request
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.txHash).toBeDefined();
+  });
+});
+```
+
+## Test Organization
+
+### Structure
+
+```
+web/
+  __tests__/
+    components/
+      FundingPanel.test.tsx
+    hooks/
+      useDAO.test.ts
+    api/
+      relay.test.ts
+sc/
+  test/
+    DAOVoting.t.sol
+    MinimalForwarder.t.sol
+```
+
+### Test Coverage
+
+- **Unit tests**: Individual functions/components
+- **Integration tests**: Multiple components working together
+- **E2E tests**: Full user flows (optional, use Playwright/Cypress)
+
+## Best Practices
+
+- **Test behavior, not implementation** - focus on what users see/do
+- **Use descriptive test names**: `test_ShouldRevertWhen_InsufficientBalance`
+- **Keep tests independent** - each test should work in isolation
+- **Mock external dependencies** - don't make real API calls in tests
+- **Test error cases** - not just happy paths
+- **Keep tests fast** - avoid unnecessary async operations
+- **Use fixtures** for common test data
+- **Clean up after tests** - reset state between tests
+
+## Running Frontend Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run in watch mode
+npm test -- --watch
+
+# Run with coverage
+npm test -- --coverage
+
+# Run specific test file
+npm test FundingPanel.test.tsx
+```

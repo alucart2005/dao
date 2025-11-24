@@ -1,0 +1,302 @@
+---
+description: Documentation standards for code comments, README, and API documentation
+---
+
+# Documentation Standards
+
+## Code Comments
+
+### When to Comment
+
+- **Complex logic**: Explain why, not what
+- **Business rules**: Document domain-specific logic
+- **Workarounds**: Explain temporary solutions or known issues
+- **Public APIs**: Document all exported functions/types
+
+### Comment Styles
+
+#### TypeScript/JavaScript
+
+```typescript
+/**
+ * Calculates voting weight as percentage of total balance.
+ * 
+ * @param balance - User's balance in wei
+ * @param totalBalance - Total DAO balance in wei
+ * @returns Voting weight percentage (0-100)
+ * 
+ * @example
+ * ```ts
+ * const weight = calculateVoteWeight(1n * 10n**18n, 10n * 10n**18n);
+ * // Returns 10n (10%)
+ * ```
+ */
+function calculateVoteWeight(balance: bigint, totalBalance: bigint): bigint {
+  // Handle edge case: empty DAO
+  if (totalBalance === 0n) return 0n;
+  
+  // Calculate percentage with BigInt precision
+  return (balance * 100n) / totalBalance;
+}
+```
+
+#### Solidity (NatSpec)
+
+```solidity
+/// @notice Creates a new proposal in the DAO
+/// @param recipient Address that will receive funds if proposal passes
+/// @param amount Amount of ETH to transfer (in wei)
+/// @param description Human-readable description of the proposal
+/// @param deadline Unix timestamp when voting ends
+/// @return proposalId The ID of the newly created proposal
+/// @dev Requires caller to have at least 10% of total balance
+/// @custom:security This function is protected by balance threshold check
+function createProposal(
+    address recipient,
+    uint256 amount,
+    string memory description,
+    uint256 deadline
+) external returns (uint256);
+```
+
+### Inline Comments
+
+```typescript
+// ✅ GOOD - Explains why
+// Use BigInt to avoid precision loss with large ETH amounts
+const total = balances.reduce((sum, b) => sum + b, 0n);
+
+// ❌ BAD - States the obvious
+// Add all balances together
+const total = balances.reduce((sum, b) => sum + b, 0n);
+```
+
+## README Structure
+
+### Project README
+
+Main README should include:
+
+```markdown
+# DAO Voting System
+
+## Overview
+Brief description of the project
+
+## Features
+- Feature 1
+- Feature 2
+
+## Tech Stack
+- Smart Contracts: Solidity, Foundry
+- Frontend: Next.js, React, TypeScript
+- Web3: Wagmi, viem
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Foundry
+- Anvil (local blockchain)
+
+### Installation
+\`\`\`bash
+npm install
+\`\`\`
+
+### Development
+\`\`\`bash
+# Start Anvil
+cd sc && anvil
+
+# Deploy contracts
+forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://localhost:8545 --broadcast
+
+# Start frontend
+cd web && npm run dev
+\`\`\`
+
+## Project Structure
+[Link to project-structure.mdc rule]
+
+## Environment Variables
+See `.env.example` for required variables
+
+## Testing
+\`\`\`bash
+# Smart contracts
+cd sc && forge test
+
+# Frontend
+cd web && npm test
+\`\`\`
+
+## Deployment
+[Deployment instructions]
+
+## Contributing
+[Contributing guidelines]
+
+## License
+MIT
+```
+
+## API Documentation
+
+### API Route Documentation
+
+Document API routes with examples:
+
+```typescript
+/**
+ * POST /api/relay
+ * 
+ * Relays a meta-transaction to the blockchain.
+ * 
+ * @body {ForwardRequest} forwardRequest - The meta-transaction request
+ * @body {string} signature - EIP-712 signature of the request
+ * 
+ * @returns {object} { txHash: string }
+ * 
+ * @example
+ * ```ts
+ * const response = await fetch('/api/relay', {
+ *   method: 'POST',
+ *   body: JSON.stringify({
+ *     forwardRequest: { from, to, value, gas, nonce, data },
+ *     signature: '0x...'
+ *   })
+ * });
+ * const { txHash } = await response.json();
+ * ```
+ */
+export async function POST(request: Request) {
+  // Implementation
+}
+```
+
+## Component Documentation
+
+### React Components
+
+Document component props and usage:
+
+```typescript
+/**
+ * ProposalCard displays a single proposal with voting options.
+ * 
+ * @example
+ * ```tsx
+ * <ProposalCard
+ *   proposalId={0n}
+ *   onVote={(id, type) => console.log('Voted', id, type)}
+ * />
+ * ```
+ */
+interface ProposalCardProps {
+  /** The unique identifier of the proposal */
+  proposalId: bigint;
+  
+  /** Callback when user votes (proposalId, voteType) */
+  onVote?: (proposalId: bigint, voteType: 0 | 1 | 2) => void;
+  
+  /** Whether to show detailed information */
+  showDetails?: boolean;
+}
+
+export function ProposalCard({ proposalId, onVote, showDetails = false }: ProposalCardProps) {
+  // Implementation
+}
+```
+
+## Hook Documentation
+
+### Custom Hooks
+
+Document hooks with usage examples:
+
+```typescript
+/**
+ * Hook for interacting with the DAO contract.
+ * 
+ * @param address - User's wallet address (optional)
+ * @returns DAO state and interaction functions
+ * 
+ * @example
+ * ```tsx
+ * const { address } = useAccount();
+ * const { balance, proposals, fund, createProposal } = useDAO(address);
+ * 
+ * // Fund the DAO
+ * await fund(1n * 10n**18n); // 1 ETH
+ * 
+ * // Create proposal
+ * const proposalId = await createProposal({
+ *   recipient: '0x...',
+ *   amount: 0.5n * 10n**18n,
+ *   description: 'Fund project X',
+ *   deadline: Date.now() + 7 * 24 * 60 * 60 * 1000
+ * });
+ * ```
+ */
+export function useDAO(address?: Address) {
+  // Implementation
+}
+```
+
+## Smart Contract Documentation
+
+### Contract-Level Documentation
+
+```solidity
+/// @title DAO Voting System
+/// @author Your Name
+/// @notice Implements a decentralized voting system with gasless voting
+/// @dev Uses ERC2771 for meta-transactions and balance-based voting power
+contract DAOVoting is ERC2771Context {
+    // Contract implementation
+}
+```
+
+## Changelog
+
+Maintain a CHANGELOG.md:
+
+```markdown
+# Changelog
+
+## [0.5.2] - 2024-01-15
+
+### Added
+- Gasless voting via meta-transactions
+- Proposal execution daemon
+
+### Changed
+- Updated to Wagmi v3
+- Improved error handling
+
+### Fixed
+- Vote weight calculation bug
+- Contract address sync issue
+
+## [0.5.1] - 2024-01-01
+...
+```
+
+## Best Practices
+
+1. **Keep docs up to date** - Update when code changes
+2. **Use examples** - Show real usage, not just types
+3. **Explain why** - Don't just describe what, explain why
+4. **Be concise** - Don't over-document obvious code
+5. **Use markdown** - Format code blocks and lists properly
+6. **Link related docs** - Cross-reference when helpful
+7. **Document edge cases** - Mention gotchas and limitations
+8. **Version your docs** - Keep docs in sync with code versions
+
+## Documentation Tools
+
+- **TypeDoc**: Generate API docs from TypeScript
+- **Solidity Docgen**: Generate docs from NatSpec
+- **Markdown**: For README and guides
+- **JSDoc/TSDoc**: For inline documentation

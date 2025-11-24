@@ -1,0 +1,249 @@
+---
+description: Code quality standards, linting, and formatting conventions
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.sol
+---
+
+# Code Quality & Linting
+
+## TypeScript/JavaScript Standards
+
+### ESLint Configuration
+
+Follow project ESLint rules (configured in `web/.eslintrc.json`):
+
+- Use strict TypeScript mode
+- No `any` types without justification
+- Prefer `const` over `let`
+- Use arrow functions for callbacks
+- Always use semicolons
+
+### Code Formatting
+
+Use Prettier for consistent formatting (configured in `web/.prettierrc`):
+
+```json
+{
+  "semi": true,
+  "singleQuote": false,
+  "tabWidth": 2,
+  "trailingComma": "es5"
+}
+```
+
+Format code before committing:
+
+```bash
+npm run format  # Format all files
+npm run lint    # Check for linting errors
+npm run lint:fix  # Auto-fix linting issues
+```
+
+### TypeScript Best Practices
+
+```typescript
+// ✅ GOOD - Explicit types
+function calculateVoteWeight(balance: bigint, totalBalance: bigint): bigint {
+  return (balance * 100n) / totalBalance;
+}
+
+// ❌ BAD - Implicit any
+function calculateVoteWeight(balance, totalBalance) {
+  return (balance * 100n) / totalBalance;
+}
+
+// ✅ GOOD - Use interfaces for object shapes
+interface Proposal {
+  recipient: Address;
+  amount: bigint;
+  description: string;
+  deadline: bigint;
+}
+
+// ✅ GOOD - Use type for unions/primitives
+type VoteType = 0 | 1 | 2;
+```
+
+### Naming Conventions
+
+- **Components**: PascalCase (`ProposalCard.tsx`)
+- **Hooks**: camelCase starting with `use` (`useDAO.ts`)
+- **Functions**: camelCase (`calculateVoteWeight`)
+- **Constants**: UPPER_SNAKE_CASE (`CONTRACTS`, `DAO_VOTING_ABI`)
+- **Types/Interfaces**: PascalCase (`Proposal`, `VoteType`)
+
+### File Organization
+
+```typescript
+// 1. Imports (external first, then internal)
+import { useAccount } from "wagmi";
+import { CONTRACTS } from "@/lib/config/contracts";
+
+// 2. Type definitions
+interface Props {
+  proposalId: bigint;
+}
+
+// 3. Component/Hook
+export function ProposalCard({ proposalId }: Props) {
+  // Implementation
+}
+```
+
+## Solidity Standards
+
+### Code Style
+
+Follow Solidity Style Guide:
+
+```solidity
+// ✅ GOOD - Clear naming
+contract DAOVoting {
+    mapping(address => uint256) private _balances;
+    Proposal[] public proposals;
+    
+    function createProposal(
+        address recipient,
+        uint256 amount,
+        string memory description,
+        uint256 deadline
+    ) external returns (uint256) {
+        // Implementation
+    }
+}
+
+// ❌ BAD - Unclear naming
+contract DAO {
+    mapping(address => uint256) b;
+    Proposal[] p;
+    
+    function cp(address r, uint256 a) external returns (uint256) {
+        // Implementation
+    }
+}
+```
+
+### NatSpec Comments
+
+Always document public/external functions:
+
+```solidity
+/// @notice Creates a new proposal in the DAO
+/// @param recipient Address that will receive funds if proposal passes
+/// @param amount Amount of ETH to transfer
+/// @param description Human-readable description of the proposal
+/// @param deadline Unix timestamp when voting ends
+/// @return proposalId The ID of the newly created proposal
+/// @dev Requires caller to have at least 10% of total balance
+function createProposal(
+    address recipient,
+    uint256 amount,
+    string memory description,
+    uint256 deadline
+) external returns (uint256);
+```
+
+## Code Review Checklist
+
+Before submitting code for review:
+
+- [ ] Code follows project style guide
+- [ ] All tests pass
+- [ ] No linter errors
+- [ ] TypeScript compiles without errors
+- [ ] No console.logs left in code (use proper logging)
+- [ ] Comments added for complex logic
+- [ ] Error handling implemented
+- [ ] Edge cases considered
+- [ ] Performance implications considered
+- [ ] Security implications reviewed
+
+## Pre-commit Hooks
+
+Consider using Husky for pre-commit hooks:
+
+```json
+// package.json
+{
+  "scripts": {
+    "prepare": "husky install",
+    "pre-commit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md}": ["prettier --write"]
+  }
+}
+```
+
+## Code Metrics
+
+Aim for:
+
+- **Function length**: < 50 lines (extract helpers if longer)
+- **File length**: < 300 lines (split into smaller modules)
+- **Cyclomatic complexity**: < 10 per function
+- **Test coverage**: > 80% for critical paths
+
+## Documentation
+
+### Inline Comments
+
+```typescript
+// ✅ GOOD - Explains why, not what
+// Use BigInt to avoid precision loss with large ETH amounts
+const totalBalance = balances.reduce((sum, b) => sum + b, 0n);
+
+// ❌ BAD - States the obvious
+// Add all balances together
+const totalBalance = balances.reduce((sum, b) => sum + b, 0n);
+```
+
+### Function Documentation
+
+```typescript
+/**
+ * Calculates the voting weight as a percentage of total balance.
+ * 
+ * @param balance - User's balance in the DAO (in wei)
+ * @param totalBalance - Total balance in the DAO (in wei)
+ * @returns Voting weight as a percentage (0-100)
+ * 
+ * @example
+ * ```ts
+ * const weight = calculateVoteWeight(1n * 10n**18n, 10n * 10n**18n);
+ * // Returns 10n (10%)
+ * ```
+ */
+function calculateVoteWeight(balance: bigint, totalBalance: bigint): bigint {
+  if (totalBalance === 0n) return 0n;
+  return (balance * 100n) / totalBalance;
+}
+```
+
+## Refactoring Guidelines
+
+When refactoring:
+
+1. **Keep functionality identical** - refactor structure, not behavior
+2. **Run tests before and after** - ensure nothing breaks
+3. **Do it in small steps** - easier to review and debug
+4. **Update documentation** - keep docs in sync with code
+5. **Consider performance** - don't make it slower
+
+## Common Issues to Avoid
+
+- **Dead code**: Remove unused functions/imports
+- **Magic numbers**: Use named constants
+- **Deep nesting**: Extract functions to reduce nesting
+- **Long parameter lists**: Use objects for > 3 parameters
+- **Duplicate code**: Extract to shared utilities
+- **Tight coupling**: Use dependency injection where appropriate
+
+## Tools
+
+- **ESLint**: Code quality and style
+- **Prettier**: Code formatting
+- **TypeScript**: Type checking
+- **Foundry**: Solidity linting and testing
+- **Husky**: Git hooks
+- **lint-staged**: Run linters on staged files

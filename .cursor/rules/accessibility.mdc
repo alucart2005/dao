@@ -1,0 +1,345 @@
+---
+description: Accessibility (a11y) patterns and best practices for Web3 applications
+globs: **/*.tsx,**/*.ts
+---
+
+# Accessibility (a11y) Best Practices
+
+## Semantic HTML
+
+### Use Proper HTML Elements
+
+```tsx
+// ✅ GOOD - Semantic HTML
+<header>
+  <h1>DAO Voting System</h1>
+  <nav>
+    <a href="/proposals">Proposals</a>
+    <a href="/fund">Fund DAO</a>
+  </nav>
+</header>
+
+<main>
+  <section aria-labelledby="proposals-heading">
+    <h2 id="proposals-heading">Active Proposals</h2>
+    {/* Proposals list */}
+  </section>
+</main>
+
+// ❌ BAD - Div soup
+<div>
+  <div>DAO Voting System</div>
+  <div>
+    <div>Proposals</div>
+    <div>Fund DAO</div>
+  </div>
+</div>
+```
+
+## ARIA Labels and Roles
+
+### Buttons and Interactive Elements
+
+```tsx
+// ✅ GOOD - Clear labels
+<button
+  aria-label="Vote for proposal"
+  onClick={handleVote}
+>
+  <VoteIcon aria-hidden="true" />
+  Vote
+</button>
+
+// ✅ GOOD - Descriptive labels for icon-only buttons
+<button
+  aria-label="Close proposal details"
+  onClick={handleClose}
+>
+  <CloseIcon aria-hidden="true" />
+</button>
+```
+
+### Form Labels
+
+```tsx
+// ✅ GOOD - Proper label association
+<label htmlFor="amount-input">
+  Amount (ETH)
+  <input
+    id="amount-input"
+    type="number"
+    aria-describedby="amount-help"
+  />
+  <span id="amount-help" className="text-sm text-gray-500">
+    Enter the amount you want to fund the DAO
+  </span>
+</label>
+
+// ❌ BAD - Missing label
+<input type="number" placeholder="Amount" />
+```
+
+### Status Messages
+
+```tsx
+// ✅ GOOD - Live region for dynamic content
+<div
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  {isPending && "Transaction pending..."}
+  {isSuccess && "Transaction successful!"}
+  {isError && "Transaction failed"}
+</div>
+
+// ✅ GOOD - Alert for important messages
+<div role="alert" className="error-message">
+  {error && "An error occurred: " + error.message}
+</div>
+```
+
+## Keyboard Navigation
+
+### Focus Management
+
+```tsx
+// ✅ GOOD - Keyboard accessible
+<button
+  onClick={handleVote}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleVote();
+    }
+  }}
+>
+  Vote
+</button>
+
+// ✅ GOOD - Focus trap in modals
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+
+function Modal({ isOpen, onClose }: ModalProps) {
+  const trapRef = useFocusTrap(isOpen);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <h2 id="modal-title">Proposal Details</h2>
+      {/* Modal content */}
+      <button onClick={onClose} aria-label="Close modal">×</button>
+    </div>
+  );
+}
+```
+
+### Skip Links
+
+```tsx
+// ✅ GOOD - Skip to main content
+<a
+  href="#main-content"
+  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
+>
+  Skip to main content
+</a>
+
+<main id="main-content">
+  {/* Main content */}
+</main>
+```
+
+## Color and Contrast
+
+### Color Contrast
+
+Ensure sufficient contrast (WCAG AA minimum):
+
+```tsx
+// ✅ GOOD - High contrast
+<button className="bg-blue-600 text-white">
+  Vote
+</button>
+
+// ❌ BAD - Low contrast
+<button className="bg-gray-300 text-gray-400">
+  Vote
+</button>
+```
+
+### Don't Rely on Color Alone
+
+```tsx
+// ✅ GOOD - Color + text/icon
+<div className="flex items-center gap-2">
+  <span className="text-green-600">✓</span>
+  <span>Proposal passed</span>
+</div>
+
+// ❌ BAD - Color only
+<div className="text-green-600">Proposal passed</div>
+```
+
+## Screen Reader Support
+
+### Hide Decorative Elements
+
+```tsx
+// ✅ GOOD - Hide decorative icons
+<button>
+  <VoteIcon aria-hidden="true" />
+  <span className="sr-only">Vote for this proposal</span>
+</button>
+
+// ✅ GOOD - Screen reader only text
+<span className="sr-only">Current balance: {balance} ETH</span>
+<span aria-hidden="true">{formatEther(balance)} ETH</span>
+```
+
+### Descriptive Text
+
+```tsx
+// ✅ GOOD - Descriptive
+<button aria-label={`Vote for proposal: ${proposal.description}`}>
+  Vote
+</button>
+
+// ❌ BAD - Vague
+<button>Click</button>
+```
+
+## Form Accessibility
+
+### Error Messages
+
+```tsx
+// ✅ GOOD - Associated error messages
+<label htmlFor="amount">
+  Amount
+  <input
+    id="amount"
+    type="number"
+    aria-invalid={hasError}
+    aria-describedby={hasError ? "amount-error" : undefined}
+  />
+  {hasError && (
+    <span id="amount-error" role="alert" className="error">
+      Amount must be greater than 0
+    </span>
+  )}
+</label>
+```
+
+### Required Fields
+
+```tsx
+// ✅ GOOD - Clear required indication
+<label htmlFor="description">
+  Description <span aria-label="required">*</span>
+  <input
+    id="description"
+    type="text"
+    required
+    aria-required="true"
+  />
+</label>
+```
+
+## Loading States
+
+### Loading Indicators
+
+```tsx
+// ✅ GOOD - Accessible loading state
+<button disabled={isPending} aria-busy={isPending}>
+  {isPending && (
+    <>
+      <Spinner aria-hidden="true" />
+      <span className="sr-only">Processing transaction...</span>
+    </>
+  )}
+  {!isPending && "Submit"}
+</button>
+```
+
+## Transaction States
+
+### Status Announcements
+
+```tsx
+// ✅ GOOD - Clear status updates
+<div role="status" aria-live="polite" aria-atomic="true">
+  {txState === "pending" && "Transaction pending..."}
+  {txState === "success" && `Transaction confirmed: ${txHash}`}
+  {txState === "error" && (
+    <div role="alert">
+      Transaction failed: {error.message}
+    </div>
+  )}
+</div>
+```
+
+## Responsive Design
+
+### Touch Targets
+
+```tsx
+// ✅ GOOD - Minimum 44x44px touch target
+<button className="min-h-[44px] min-w-[44px] p-3">
+  Vote
+</button>
+```
+
+### Responsive Text
+
+```tsx
+// ✅ GOOD - Scalable text
+<p className="text-base md:text-lg">
+  Proposal description
+</p>
+```
+
+## Testing Accessibility
+
+### Tools
+
+- **axe DevTools**: Browser extension for accessibility testing
+- **WAVE**: Web accessibility evaluation tool
+- **Lighthouse**: Includes accessibility audit
+- **Screen readers**: Test with NVDA (Windows) or VoiceOver (Mac)
+
+### Manual Testing
+
+1. **Keyboard navigation**: Tab through all interactive elements
+2. **Screen reader**: Test with actual screen reader software
+3. **Color contrast**: Use contrast checker tools
+4. **Focus indicators**: Ensure all focusable elements have visible focus
+
+## Best Practices Checklist
+
+- [ ] All interactive elements are keyboard accessible
+- [ ] All images have alt text (or aria-hidden for decorative)
+- [ ] Form inputs have associated labels
+- [ ] Error messages are associated with inputs
+- [ ] Color contrast meets WCAG AA standards
+- [ ] Status messages use aria-live regions
+- [ ] Focus indicators are visible
+- [ ] Semantic HTML used throughout
+- [ ] ARIA labels added where needed
+- [ ] Skip links for main content
+- [ ] Touch targets are at least 44x44px
+- [ ] Text is scalable (no fixed sizes)
+
+## Resources
+
+- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [MDN Accessibility Guide](https://developer.mozilla.org/en-US/docs/Web/Accessibility)
+- [WebAIM](https://webaim.org/) - Web accessibility resources
+- [a11y Project](https://www.a11yproject.com/) - Community-driven accessibility guide

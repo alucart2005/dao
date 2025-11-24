@@ -1,0 +1,238 @@
+---
+description: Environment variables, configuration management, and secrets handling
+---
+
+# Environment & Configuration Management
+
+## Environment Files
+
+### File Structure
+
+- **`.env.local`** - Local development (gitignored, never commit)
+- **`.env.example`** - Template with placeholder values (committed)
+- **`.env.production`** - Production config (gitignored, managed separately)
+
+### Environment Variables
+
+#### Client-Side Variables (NEXT_PUBLIC_*)
+
+These are exposed to the browser, so never include secrets:
+
+```bash
+# Contract addresses
+NEXT_PUBLIC_DAO_ADDRESS=0x1234567890123456789012345678901234567890
+NEXT_PUBLIC_FORWARDER_ADDRESS=0x0987654321098765432109876543210987654321
+
+# Chain configuration
+NEXT_PUBLIC_CHAIN_ID=31337
+NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+
+# API endpoints (if needed)
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
+
+#### Server-Side Variables (No NEXT_PUBLIC_ prefix)
+
+These are only available in API routes and server components:
+
+```bash
+# Relayer configuration (NEVER expose to client)
+RELAYER_PRIVATE_KEY=0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+RELAYER_ADDRESS=0x1234567890123456789012345678901234567890
+
+# Database (if added later)
+DATABASE_URL=postgresql://user:pass@localhost:5432/dao
+
+# API keys (if needed)
+EXTERNAL_API_KEY=secret-key-here
+```
+
+## Configuration Files
+
+### Contract Configuration
+
+Contract addresses and ABIs in [contracts.ts](mdc:web/lib/config/contracts.ts):
+
+```typescript
+import { Address } from "viem";
+
+export const CONTRACTS = {
+  DAO_VOTING: (process.env.NEXT_PUBLIC_DAO_ADDRESS || "0x0") as Address,
+  MINIMAL_FORWARDER: (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || "0x0") as Address,
+} as const;
+```
+
+### Chain Configuration
+
+Chain config in [chain.ts](mdc:web/lib/config/chain.ts):
+
+```typescript
+import { createConfig } from "wagmi";
+import { http } from "viem";
+import { localhost } from "viem/chains";
+
+const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 31337);
+const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8545";
+
+export const config = createConfig({
+  chains: [localhost],
+  transports: {
+    [chainId]: http(rpcUrl),
+  },
+});
+```
+
+## Environment-Specific Configuration
+
+### Development (Local)
+
+```bash
+# .env.local
+NEXT_PUBLIC_CHAIN_ID=31337
+NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+RELAYER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+```
+
+### Testnet (Sepolia/Goerli)
+
+```bash
+# .env.testnet
+NEXT_PUBLIC_CHAIN_ID=11155111  # Sepolia
+NEXT_PUBLIC_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+RELAYER_PRIVATE_KEY=0x...  # Testnet relayer key
+```
+
+### Production
+
+```bash
+# .env.production (managed via deployment platform)
+NEXT_PUBLIC_CHAIN_ID=1  # Mainnet
+NEXT_PUBLIC_RPC_URL=https://mainnet.infura.io/v3/YOUR_KEY
+RELAYER_PRIVATE_KEY=0x...  # Production relayer key (secure storage)
+```
+
+## Secrets Management
+
+### Never Commit Secrets
+
+Ensure `.env.local` is in `.gitignore`:
+
+```gitignore
+# .gitignore
+.env.local
+.env*.local
+*.key
+*.pem
+```
+
+### Use .env.example
+
+Create a template file for other developers:
+
+```bash
+# .env.example
+NEXT_PUBLIC_DAO_ADDRESS=0x0000000000000000000000000000000000000000
+NEXT_PUBLIC_FORWARDER_ADDRESS=0x0000000000000000000000000000000000000000
+NEXT_PUBLIC_CHAIN_ID=31337
+NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+RELAYER_PRIVATE_KEY=your_relayer_private_key_here
+RELAYER_ADDRESS=your_relayer_address_here
+```
+
+### Production Secrets
+
+For production deployments:
+
+- **Vercel**: Use Environment Variables in dashboard
+- **AWS**: Use Secrets Manager or Parameter Store
+- **Docker**: Use secrets or environment files (not in image)
+- **Kubernetes**: Use Secrets resources
+
+## Contract Address Synchronization
+
+Contract addresses are auto-synced from Foundry deployment to `.env.local`:
+
+```bash
+# Automatic (runs before npm run dev)
+npm run sync-contracts
+
+# Manual sync
+node web/scripts/sync-contracts.js
+```
+
+The sync script reads from `sc/broadcast/DeployLocal.s.sol/31337/run-latest.json` and updates `.env.local`.
+
+## Validation
+
+### Validate Environment on Startup
+
+Add validation in API routes or startup:
+
+```typescript
+// lib/config/validate-env.ts
+export function validateEnv() {
+  const required = [
+    "NEXT_PUBLIC_DAO_ADDRESS",
+    "NEXT_PUBLIC_FORWARDER_ADDRESS",
+    "NEXT_PUBLIC_CHAIN_ID",
+    "NEXT_PUBLIC_RPC_URL",
+  ];
+
+  const missing = required.filter((key) => !process.env[key]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  }
+
+  // Validate server-side only in API routes
+  if (typeof window === "undefined") {
+    if (!process.env.RELAYER_PRIVATE_KEY) {
+      throw new Error("RELAYER_PRIVATE_KEY is required for API routes");
+    }
+  }
+}
+```
+
+## Best Practices
+
+1. **Never commit `.env.local`** - always gitignored
+2. **Use `.env.example`** - document required variables
+3. **Validate on startup** - fail fast if config is missing
+4. **Use TypeScript** - type your config objects
+5. **Separate concerns** - client vs server variables
+6. **Use constants** - import from config files, don't use `process.env` directly
+7. **Document defaults** - show what happens if variable is missing
+8. **Test with different configs** - ensure flexibility
+
+## Configuration Access Pattern
+
+```typescript
+// ✅ GOOD - Centralized config
+import { CONTRACTS } from "@/lib/config/contracts";
+
+function useProposal(id: bigint) {
+  const { data } = useReadContract({
+    address: CONTRACTS.DAO_VOTING,
+    // ...
+  });
+}
+
+// ❌ BAD - Direct env access everywhere
+function useProposal(id: bigint) {
+  const { data } = useReadContract({
+    address: process.env.NEXT_PUBLIC_DAO_ADDRESS as Address,
+    // ...
+  });
+}
+```
+
+## Migration Between Environments
+
+When moving between environments:
+
+1. Update contract addresses in `.env.local`
+2. Update chain ID and RPC URL
+3. Update relayer key (if different)
+4. Redeploy contracts if needed
+5. Test all functionality
+6. Update documentation
