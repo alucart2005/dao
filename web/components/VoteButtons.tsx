@@ -51,12 +51,12 @@ export function VoteButtons({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-4 items-center justify-between">
-        <div className="flex gap-4 items-center">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <button
             onClick={() => handleVote(VoteType.FOR)}
             disabled={isPending}
-            className="px-4 py-2 rounded transition-colors disabled:opacity-50"
+            className="px-3 sm:px-4 py-2 rounded transition-colors disabled:opacity-50 text-sm sm:text-base flex-1 sm:flex-none"
             style={{
               backgroundColor:
                 userVote === VoteType.FOR
@@ -85,7 +85,7 @@ export function VoteButtons({
           <button
             onClick={() => handleVote(VoteType.AGAINST)}
             disabled={isPending}
-            className="px-4 py-2 rounded transition-colors disabled:opacity-50"
+            className="px-3 sm:px-4 py-2 rounded transition-colors disabled:opacity-50 text-sm sm:text-base flex-1 sm:flex-none"
             style={{
               backgroundColor:
                 userVote === VoteType.AGAINST
@@ -114,7 +114,7 @@ export function VoteButtons({
           <button
             onClick={() => handleVote(VoteType.ABSTAIN)}
             disabled={isPending}
-            className="px-4 py-2 rounded transition-colors disabled:opacity-50"
+            className="px-3 sm:px-4 py-2 rounded transition-colors disabled:opacity-50 text-sm sm:text-base flex-1 sm:flex-none"
             style={{
               backgroundColor:
                 userVote === VoteType.ABSTAIN
@@ -142,10 +142,10 @@ export function VoteButtons({
           </button>
         </div>
         {(userVote !== undefined || txHash) && (
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center text-xs sm:text-sm">
             {userVote !== undefined && (
               <div
-                className="text-sm"
+                className="break-words"
                 style={{ color: "var(--color-carbon-black-600)" }}
               >
                 Tu voto actual:{" "}
@@ -158,7 +158,7 @@ export function VoteButtons({
             )}
             {txHash && (
               <div
-                className="text-sm"
+                className="break-all"
                 style={{ color: "var(--color-seaweed)" }}
               >
                 Voto enviado! TX: {txHash.slice(0, 10)}...

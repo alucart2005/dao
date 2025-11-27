@@ -105,71 +105,83 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
 
   return (
     <div
-      className="p-6 rounded-lg shadow"
+      className="p-4 sm:p-6 rounded-lg shadow"
       style={{ backgroundColor: "var(--color-alabaster-grey)" }}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <div className="flex-1 min-w-0">
           <h3
-            className="text-lg font-bold"
+            className="text-base sm:text-lg font-bold break-words"
             style={{ color: "var(--color-carbon-black)" }}
           >
             {(proposal as any).name || `Propuesta #${proposal.id.toString()}`}
           </h3>
         </div>
         <span
-          className="px-3 py-1 rounded text-sm font-semibold"
+          className="px-3 py-1 rounded text-xs sm:text-sm font-semibold whitespace-nowrap"
           style={{ backgroundColor: statusColors.bg, color: statusColors.text }}
         >
           {status}
         </span>
       </div>
 
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
+      <div className="space-y-3 mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="flex-1 w-full sm:min-w-[200px]">
             <span
-              className="font-medium"
+              className="font-medium text-sm sm:text-base"
               style={{ color: "var(--color-carbon-black-700)" }}
             >
               Beneficiario:{" "}
             </span>
-            <span style={{ color: "var(--color-carbon-black-600)" }}>
+            <span 
+              className="text-xs sm:text-sm break-all"
+              style={{ color: "var(--color-carbon-black-600)" }}
+            >
               {proposal.recipient}
             </span>
           </div>
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 w-full sm:min-w-[150px]">
             <span
-              className="font-medium"
+              className="font-medium text-sm sm:text-base"
               style={{ color: "var(--color-carbon-black-700)" }}
             >
               Monto:{" "}
             </span>
-            <span style={{ color: "var(--color-carbon-black-600)" }}>
+            <span 
+              className="text-xs sm:text-sm"
+              style={{ color: "var(--color-carbon-black-600)" }}
+            >
               {formatEther(proposal.amount)} ETH
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="flex-1 w-full sm:min-w-[200px]">
             <span
-              className="font-medium"
+              className="font-medium text-sm sm:text-base"
               style={{ color: "var(--color-carbon-black-700)" }}
             >
               Fecha límite:{" "}
             </span>
-            <span style={{ color: "var(--color-carbon-black-600)" }}>
+            <span 
+              className="text-xs sm:text-sm"
+              style={{ color: "var(--color-carbon-black-600)" }}
+            >
               {formatDate(proposal.deadline)}
             </span>
           </div>
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 w-full sm:min-w-[200px]">
             <span
-              className="font-medium"
+              className="font-medium text-sm sm:text-base"
               style={{ color: "var(--color-carbon-black-700)" }}
             >
               Proponente:{" "}
             </span>
-            <span style={{ color: "var(--color-carbon-black-600)" }}>
+            <span 
+              className="text-xs sm:text-sm break-all"
+              style={{ color: "var(--color-carbon-black-600)" }}
+            >
               {proposal.proposer}
             </span>
           </div>
@@ -177,19 +189,19 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
       </div>
 
       <div
-        className="mb-4 p-3 rounded"
+        className="mb-4 p-3 sm:p-4 rounded"
         style={{ backgroundColor: "var(--color-alabaster-grey-700)" }}
       >
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
           <div>
             <div
-              className="text-sm"
+              className="text-xs sm:text-sm mb-1"
               style={{ color: "var(--color-carbon-black-600)" }}
             >
               A FAVOR
             </div>
             <div
-              className="text-lg font-bold"
+              className="text-base sm:text-lg font-bold"
               style={{ color: "var(--color-seaweed)" }}
             >
               {formatEther(proposal.votesFor)}
@@ -197,13 +209,13 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
           </div>
           <div>
             <div
-              className="text-sm"
+              className="text-xs sm:text-sm mb-1"
               style={{ color: "var(--color-carbon-black-600)" }}
             >
               EN CONTRA
             </div>
             <div
-              className="text-lg font-bold"
+              className="text-base sm:text-lg font-bold"
               style={{ color: "var(--color-stormy-teal)" }}
             >
               {formatEther(proposal.votesAgainst)}
@@ -211,13 +223,13 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
           </div>
           <div>
             <div
-              className="text-sm"
+              className="text-xs sm:text-sm mb-1"
               style={{ color: "var(--color-carbon-black-600)" }}
             >
               ABSTENCIÓN
             </div>
             <div
-              className="text-lg font-bold"
+              className="text-base sm:text-lg font-bold"
               style={{ color: "var(--color-carbon-black-600)" }}
             >
               {formatEther(proposal.votesAbstain)}
