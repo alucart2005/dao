@@ -16,7 +16,7 @@ export function ConnectWallet() {
             className="font-semibold"
             style={{ color: "var(--color-alabaster-grey)" }}
           >
-            Connected
+            Conectado
           </div>
           <div style={{ color: "var(--color-alabaster-grey-600)" }}>
             {formatAddress(address)}
@@ -37,7 +37,7 @@ export function ConnectWallet() {
             (e.currentTarget.style.backgroundColor = "var(--color-stormy-teal)")
           }
         >
-          Disconnect
+          Desconectar
         </button>
       </div>
     );

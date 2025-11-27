@@ -30,7 +30,7 @@ export default function Home() {
               className="text-3xl font-bold"
               style={{ color: "var(--color-alabaster-grey)" }}
             >
-              DAO Voting System
+              DAO Sistema de Votación
             </h1>
             <div className="flex items-center gap-3">
               <ConnectWallet />
