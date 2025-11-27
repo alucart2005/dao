@@ -5,7 +5,6 @@ import { ConnectWallet } from "@/components/ConnectWallet";
 import { FundingPanel } from "@/components/FundingPanel";
 import { CreateProposal } from "@/components/CreateProposal";
 import { ProposalList } from "@/components/ProposalList";
-import { DaemonTrigger } from "@/components/DaemonTrigger";
 
 export default function Home() {
   const [proposalRefreshTrigger, setProposalRefreshTrigger] = useState(0);
@@ -38,10 +37,6 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <DaemonTrigger />
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <FundingPanel />
           <CreateProposal onProposalCreated={handleProposalCreated} />

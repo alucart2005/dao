@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { CONTRACTS, DAO_VOTING_ABI } from "@/lib/config/contracts";
 import { ProposalCard } from "./ProposalCard";
 import { VotingSummary } from "./VotingSummary";
+import { DaemonTrigger } from "./DaemonTrigger";
 import { createPublicClient, http, isAddress } from "viem";
 import { localChain } from "@/lib/config/chain";
 
@@ -247,38 +248,41 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
   // Show appropriate state based on contract deployment status
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h2
           className="text-2xl font-bold"
           style={{ color: "var(--color-carbon-black)" }}
         >
           Panel de Votaciones
         </h2>
-        <button
-          onClick={() => setShowHelp(!showHelp)}
-          className="px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2"
-          style={{
-            backgroundColor: showHelp
-              ? "var(--color-stormy-teal)"
-              : "var(--color-stormy-teal-900)",
-            color: showHelp ? "white" : "var(--color-stormy-teal-200)",
-          }}
-          onMouseEnter={(e) => {
-            if (!showHelp) {
-              e.currentTarget.style.backgroundColor =
-                "var(--color-stormy-teal-800)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showHelp) {
-              e.currentTarget.style.backgroundColor =
-                "var(--color-stormy-teal-900)";
-            }
-          }}
-        >
-          <span>❓</span>
-          <span>{showHelp ? "Ocultar Ayuda" : "Ayuda"}</span>
-        </button>
+        <div className="flex items-center gap-4 flex-1 justify-end">
+          <DaemonTrigger />
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+            style={{
+              backgroundColor: showHelp
+                ? "var(--color-stormy-teal)"
+                : "var(--color-stormy-teal-900)",
+              color: showHelp ? "white" : "var(--color-stormy-teal-200)",
+            }}
+            onMouseEnter={(e) => {
+              if (!showHelp) {
+                e.currentTarget.style.backgroundColor =
+                  "var(--color-stormy-teal-800)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!showHelp) {
+                e.currentTarget.style.backgroundColor =
+                  "var(--color-stormy-teal-900)";
+              }
+            }}
+          >
+            <span>❓</span>
+            <span>{showHelp ? "Ocultar Ayuda" : "Ayuda"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Help Modal - Floating Window with Blur Background */}
