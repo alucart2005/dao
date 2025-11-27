@@ -126,49 +126,53 @@ export function ProposalCard({ proposalId, onUpdate }: ProposalCardProps) {
       </div>
 
       <div className="space-y-2 mb-4">
-        <div>
-          <span
-            className="font-medium"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Beneficiario:{" "}
-          </span>
-          <span style={{ color: "var(--color-carbon-black-600)" }}>
-            {proposal.recipient}
-          </span>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <span
+              className="font-medium"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              Beneficiario:{" "}
+            </span>
+            <span style={{ color: "var(--color-carbon-black-600)" }}>
+              {proposal.recipient}
+            </span>
+          </div>
+          <div className="flex-1 min-w-[150px]">
+            <span
+              className="font-medium"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              Monto:{" "}
+            </span>
+            <span style={{ color: "var(--color-carbon-black-600)" }}>
+              {formatEther(proposal.amount)} ETH
+            </span>
+          </div>
         </div>
-        <div>
-          <span
-            className="font-medium"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Monto:{" "}
-          </span>
-          <span style={{ color: "var(--color-carbon-black-600)" }}>
-            {formatEther(proposal.amount)} ETH
-          </span>
-        </div>
-        <div>
-          <span
-            className="font-medium"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Fecha límite:{" "}
-          </span>
-          <span style={{ color: "var(--color-carbon-black-600)" }}>
-            {formatDate(proposal.deadline)}
-          </span>
-        </div>
-        <div>
-          <span
-            className="font-medium"
-            style={{ color: "var(--color-carbon-black-700)" }}
-          >
-            Proponente:{" "}
-          </span>
-          <span style={{ color: "var(--color-carbon-black-600)" }}>
-            {proposal.proposer}
-          </span>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <span
+              className="font-medium"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              Fecha límite:{" "}
+            </span>
+            <span style={{ color: "var(--color-carbon-black-600)" }}>
+              {formatDate(proposal.deadline)}
+            </span>
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <span
+              className="font-medium"
+              style={{ color: "var(--color-carbon-black-700)" }}
+            >
+              Proponente:{" "}
+            </span>
+            <span style={{ color: "var(--color-carbon-black-600)" }}>
+              {proposal.proposer}
+            </span>
+          </div>
         </div>
       </div>
 

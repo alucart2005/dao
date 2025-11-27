@@ -365,13 +365,39 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                       className="font-semibold mb-2"
                       style={{ color: "var(--color-carbon-black)" }}
                     >
-                      ¿Qué es este panel?
+                      ¿Qué es el Panel de Votaciones?
                     </h4>
                     <p className="mb-2">
-                      El Panel de Votaciones es tu centro de control para
-                      participar en la gobernanza del DAO. Aquí puedes ver todas
-                      las propuestas activas, votar sobre ellas y consultar los
-                      resultados de las votaciones en tiempo real.
+                      El Panel de Votaciones es el centro de gobernanza del DAO donde puedes participar activamente en la toma de decisiones. Aquí puedes visualizar todas las propuestas, votar sobre ellas, consultar resultados en tiempo real y gestionar la ejecución automática de propuestas aprobadas.
+                    </p>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      🤖 Daemon de Ejecución Automática
+                    </h4>
+                    <p className="mb-2">
+                      El botón <strong>"Ejecutar Daemon"</strong> ubicado en el header del panel permite ejecutar automáticamente todas las propuestas que han sido aprobadas y han cumplido su período de espera. El daemon:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>
+                        <strong>Verifica automáticamente</strong> todas las propuestas aprobadas que están listas para ejecutarse
+                      </li>
+                      <li>
+                        <strong>Ejecuta las transferencias</strong> de fondos a los beneficiarios de las propuestas aprobadas
+                      </li>
+                      <li>
+                        <strong>Muestra un resumen</strong> de cuántas propuestas fueron ejecutadas en cada ejecución
+                      </li>
+                      <li>
+                        <strong>No requiere gas del usuario</strong> - el relayer paga las comisiones de ejecución
+                      </li>
+                    </ul>
+                    <p className="mt-2 text-xs" style={{ color: "var(--color-carbon-black-600)" }}>
+                      💡 <strong>Tip:</strong> Ejecuta el daemon periódicamente para asegurar que las propuestas aprobadas se ejecuten oportunamente.
                     </p>
                   </section>
 
@@ -382,22 +408,21 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                     >
                       📊 Resumen de Votaciones
                     </h4>
+                    <p className="mb-2">
+                      El resumen proporciona una vista consolidada de todas las propuestas con estadísticas en tiempo real:
+                    </p>
                     <ul className="list-disc list-inside space-y-1 ml-2">
                       <li>
-                        <strong>Resumen General:</strong> Muestra estadísticas
-                        agregadas de todas las propuestas (total de votos,
-                        propuestas activas, aprobadas, etc.)
+                        <strong>Estadísticas Generales:</strong> Total de propuestas, votos emitidos, propuestas activas, aprobadas, rechazadas y ejecutadas
                       </li>
                       <li>
-                        <strong>Detalles por Propuesta:</strong> Cada propuesta
-                        muestra sus votos individuales (A FAVOR, EN CONTRA,
-                        ABSTENCIÓN) con porcentajes y barras de progreso.
+                        <strong>Vista Detallada por Propuesta:</strong> Cada propuesta muestra sus votos individuales (A FAVOR, EN CONTRA, ABSTENCIÓN) con porcentajes visuales y barras de progreso
                       </li>
                       <li>
-                        <strong>Botones de Votación:</strong> Puedes votar
-                        directamente desde el resumen haciendo clic en los
-                        botones A FAVOR, EN CONTRA o ABSTENCIÓN de cada
-                        propuesta.
+                        <strong>Votación Directa:</strong> Puedes votar directamente desde el resumen usando los botones de cada propuesta sin necesidad de abrir detalles adicionales
+                      </li>
+                      <li>
+                        <strong>Información en Tiempo Real:</strong> Los datos se actualizan automáticamente reflejando el estado actual de cada propuesta
                       </li>
                     </ul>
                   </section>
@@ -407,27 +432,31 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                       className="font-semibold mb-2"
                       style={{ color: "var(--color-carbon-black)" }}
                     >
-                      🗳️ Cómo Votar
+                      🗳️ Cómo Participar en las Votaciones
                     </h4>
-                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <ol className="list-decimal list-inside space-y-2 ml-2">
                       <li>
-                        <strong>Conecta tu wallet:</strong> Asegúrate de tener
-                        tu wallet conectada (MetaMask, etc.)
+                        <strong>Conecta tu Wallet:</strong> Asegúrate de tener tu wallet (MetaMask, WalletConnect, etc.) conectada a la red correcta (Anvil Local para desarrollo)
                       </li>
                       <li>
-                        <strong>Selecciona tu voto:</strong> En el resumen, haz
-                        clic en el botón correspondiente (A FAVOR, EN CONTRA o
-                        ABSTENCIÓN) de la propuesta que deseas votar.
+                        <strong>Revisa las Propuestas:</strong> Explora el resumen para ver todas las propuestas activas y sus estados actuales
                       </li>
                       <li>
-                        <strong>Firma la transacción:</strong> Tu wallet te
-                        pedirá firmar la transacción. Las votaciones son sin gas
-                        (gasless), por lo que no pagarás comisiones.
+                        <strong>Selecciona tu Voto:</strong> En el resumen, haz clic en el botón correspondiente:
+                        <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                          <li><strong>A FAVOR:</strong> Si estás de acuerdo con la propuesta</li>
+                          <li><strong>EN CONTRA:</strong> Si no estás de acuerdo</li>
+                          <li><strong>ABSTENCIÓN:</strong> Si prefieres no tomar posición</li>
+                        </ul>
                       </li>
                       <li>
-                        <strong>Confirma:</strong> Una vez firmada, tu voto se
-                        enviará automáticamente. Verás un mensaje de
-                        confirmación con el hash de la transacción.
+                        <strong>Firma la Meta-Transacción:</strong> Tu wallet te pedirá firmar la transacción. Las votaciones son <strong>sin gas (gasless)</strong>, por lo que no pagarás comisiones de red
+                      </li>
+                      <li>
+                        <strong>Confirma tu Voto:</strong> Una vez firmada, tu voto se enviará automáticamente. Verás un mensaje de confirmación con el hash de la transacción
+                      </li>
+                      <li>
+                        <strong>Actualización Automática:</strong> El panel se actualizará automáticamente mostrando tu voto en las estadísticas
                       </li>
                     </ol>
                   </section>
@@ -437,13 +466,21 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                       className="font-semibold mb-2"
                       style={{ color: "var(--color-carbon-black)" }}
                     >
-                      📋 Ver Propuestas Detalladas
+                      📋 Ver Detalles Completos de Propuestas
                     </h4>
                     <p className="mb-2">
-                      Para ver información completa de cada propuesta
-                      (beneficiario, monto, fecha límite, etc.), haz clic en el
-                      botón <strong>"▶ Ver Propuestas"</strong> en el resumen.
-                      Esto mostrará las tarjetas detalladas de cada propuesta.
+                      Para acceder a información detallada de cada propuesta, incluyendo:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Dirección del beneficiario</li>
+                      <li>Monto exacto a transferir</li>
+                      <li>Fecha límite de votación</li>
+                      <li>Proponente de la propuesta</li>
+                      <li>Historial completo de votos</li>
+                      <li>Estado de ejecución</li>
+                    </ul>
+                    <p className="mt-2">
+                      Haz clic en el botón <strong>"▶ Ver Propuestas"</strong> en el resumen para expandir y ver las tarjetas detalladas de cada propuesta.
                     </p>
                   </section>
 
@@ -452,25 +489,23 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                       className="font-semibold mb-2"
                       style={{ color: "var(--color-carbon-black)" }}
                     >
-                      🏷️ Estados de las Propuestas
+                      🏷️ Estados y Ciclo de Vida de las Propuestas
                     </h4>
-                    <ul className="list-disc list-inside space-y-1 ml-2">
+                    <ul className="list-disc list-inside space-y-2 ml-2">
                       <li>
-                        <strong>Activa:</strong> La propuesta está abierta para
-                        votación y aún no ha alcanzado su fecha límite.
+                        <strong>🟢 Activa:</strong> La propuesta está abierta para votación y aún no ha alcanzado su fecha límite. Los miembros pueden votar libremente.
                       </li>
                       <li>
-                        <strong>Aprobada:</strong> La propuesta recibió más
-                        votos a favor que en contra y puede ser ejecutada.
+                        <strong>✅ Aprobada:</strong> La propuesta recibió más votos a favor que en contra después de la fecha límite. Está lista para ser ejecutada pero requiere un período de espera (execution delay) antes de poder ejecutarse.
                       </li>
                       <li>
-                        <strong>Rechazada:</strong> La propuesta recibió más
-                        votos en contra que a favor.
+                        <strong>❌ Rechazada:</strong> La propuesta recibió más votos en contra que a favor después de la fecha límite. No puede ser ejecutada.
                       </li>
                       <li>
-                        <strong>Ejecutada:</strong> La propuesta fue aprobada y
-                        ya se ejecutó (se transfirieron los fondos al
-                        beneficiario).
+                        <strong>⚡ Ejecutada:</strong> La propuesta fue aprobada, cumplió su período de espera y ya se ejecutó exitosamente (los fondos fueron transferidos al beneficiario). Este estado es permanente.
+                      </li>
+                      <li>
+                        <strong>⏳ Pendiente de Ejecución:</strong> La propuesta está aprobada y ha cumplido su período de espera, pero aún no se ha ejecutado. Puede ejecutarse usando el daemon.
                       </li>
                     </ul>
                   </section>
@@ -480,26 +515,60 @@ function ProposalListComponent({ refreshTrigger = 0 }: ProposalListProps) {
                       className="font-semibold mb-2"
                       style={{ color: "var(--color-carbon-black)" }}
                     >
-                      💡 Consejos
+                      🔄 Cambiar tu Voto
+                    </h4>
+                    <p className="mb-2">
+                      Puedes cambiar tu voto en cualquier momento mientras la propuesta esté activa:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Simplemente selecciona un botón de voto diferente (A FAVOR, EN CONTRA o ABSTENCIÓN)</li>
+                      <li>Tu voto anterior será reemplazado automáticamente por el nuevo</li>
+                      <li>Las estadísticas se actualizarán reflejando tu nuevo voto</li>
+                      <li>Una vez que la propuesta alcanza su fecha límite, no puedes cambiar tu voto</li>
+                    </ul>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      💡 Consejos y Mejores Prácticas
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 ml-2">
+                      <li>
+                        <strong>Votaciones Sin Gas:</strong> Gracias a las meta-transacciones (EIP-2771), todas las votaciones son completamente gratuitas. No necesitas ETH para participar.
+                      </li>
+                      <li>
+                        <strong>Actualización Automática:</strong> El panel se actualiza automáticamente cada pocos segundos. Si no ves cambios recientes, espera un momento o recarga la página.
+                      </li>
+                      <li>
+                        <strong>Ejecución Proactiva:</strong> Ejecuta el daemon regularmente para asegurar que las propuestas aprobadas se ejecuten oportunamente y los beneficiarios reciban sus fondos.
+                      </li>
+                      <li>
+                        <strong>Revisa Antes de Votar:</strong> Usa el botón "Ver Propuestas" para revisar todos los detalles antes de emitir tu voto, especialmente el monto y el beneficiario.
+                      </li>
+                      <li>
+                        <strong>Crear Propuestas:</strong> Para crear nuevas propuestas, usa el formulario "Crear Propuesta" ubicado en la parte superior de la página. Recuerda que necesitas tener al menos el 10% del balance total del DAO para crear una propuesta.
+                      </li>
+                      <li>
+                        <strong>Participación Activa:</strong> Tu participación es importante para la gobernanza del DAO. Revisa las propuestas regularmente y vota según tus convicciones.
+                      </li>
+                    </ul>
+                  </section>
+
+                  <section>
+                    <h4
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--color-carbon-black)" }}
+                    >
+                      ⚙️ Requisitos Técnicos
                     </h4>
                     <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>
-                        Solo puedes votar una vez por propuesta. Si cambias de
-                        opinión, puedes votar nuevamente y tu voto anterior será
-                        reemplazado.
-                      </li>
-                      <li>
-                        Las votaciones son sin gas gracias a las
-                        meta-transacciones. No necesitas ETH para votar.
-                      </li>
-                      <li>
-                        El panel se actualiza automáticamente. Si no ves cambios
-                        recientes, espera unos segundos o recarga la página.
-                      </li>
-                      <li>
-                        Para crear nuevas propuestas, usa el formulario "Crear
-                        Propuesta" en la parte superior de la página.
-                      </li>
+                      <li>Wallet compatible con EIP-712 (MetaMask, WalletConnect, etc.)</li>
+                      <li>Conexión a la red correcta (Anvil Local para desarrollo, Sepolia para testnet)</li>
+                      <li>No se requiere ETH en tu wallet para votar (las votaciones son gasless)</li>
+                      <li>El relayer se encarga de pagar el gas de las transacciones</li>
                     </ul>
                   </section>
                 </div>

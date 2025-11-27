@@ -23,7 +23,7 @@ export default function Home() {
         className="shadow"
         style={{ backgroundColor: "var(--color-carbon-black)" }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <h1
               className="text-3xl font-bold"
@@ -44,6 +44,22 @@ export default function Home() {
 
         <ProposalList refreshTrigger={proposalRefreshTrigger} />
       </main>
+
+      <footer
+        className="shadow-lg mt-12"
+        style={{ backgroundColor: "var(--color-carbon-black)" }}
+      >
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex justify-center items-center">
+            <p
+              className="text-sm font-medium"
+              style={{ color: "var(--color-alabaster-grey-600)" }}
+            >
+              Crafted with <span className="text-red-500">❤️</span> in Medellín, Colombia | Napoleon Anaya
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

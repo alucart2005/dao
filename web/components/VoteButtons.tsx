@@ -51,8 +51,8 @@ export function VoteButtons({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2 items-center justify-between">
-        <div className="flex gap-2 items-center">
+      <div className="flex gap-4 items-center justify-between">
+        <div className="flex gap-4 items-center">
           <button
             onClick={() => handleVote(VoteType.FOR)}
             disabled={isPending}
