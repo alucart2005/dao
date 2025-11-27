@@ -13,7 +13,9 @@
   <button onclick="setLanguage('en')" id="btn-en" style="padding: 8px 16px; margin: 0 5px; background-color: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">English</button>
   <button onclick="setLanguage('es')" id="btn-es" style="padding: 8px 16px; margin: 0 5px; background-color: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">Español</button>
 </div>
-
+<p align="center">
+  <img src="./web/public/Capture.jpg" alt="FileHashStorage dApp">
+</p>
 </div>
 
 ---
